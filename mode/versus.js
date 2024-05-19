@@ -8424,7 +8424,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						}
 					}
 				},
-				dieAfter: function (source) {
+				dieAfter(source) {
+					if (this.isIgnored()) return;
 					if (_status.connectMode) {
 						if (_status.mode == "1v1" || _status.mode == "3v3") {
 							game.broadcastAll(function (dead) {
@@ -8439,12 +8440,12 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								}
 							}, this);
 							if (this.side == game.me.side) {
-								if (_status.friend.length == 0) {
+								if (!_status.friend.filter(p => !p.isIgnored()).length) {
 									game.over(false);
 									return;
 								}
 							} else {
-								if (_status.enemy.length == 0) {
+								if (!_status.enemy.filter(p => !p.isIgnored()).length) {
 									game.over(true);
 									return;
 								}
@@ -8454,13 +8455,9 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							if (_status.replacetwo) {
 								// later ?
 							}
-							var friend;
-							for (var i = 0; i < game.players.length; i++) {
-								if (game.players[i].side == this.side) {
-									friend = game.players[i];
-									break;
-								}
-							}
+							const friend = game.filterPlayer(current => {
+								return p.side == this.side && !p.isIgnored();
+							})[0];
 							if (!friend) {
 								game.over(this.side != game.me.side);
 							} else friend.showGiveup();
@@ -8469,12 +8466,13 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								game.over(this.side != game.me.side);
 							} else {
 								if (_status.mode == "guandu" && source && source.side != this.side) {
-									var hs = this.getCards("h");
+									const hs = this.getCards("h");
 									if (hs.length) source.gain(hs, this, "giveAuto");
 								}
-								var side1 = [],
+								const side1 = [],
 									side2 = [];
-								for (var i = 0; i < game.players.length; i++) {
+								for (let i = 0; i < game.players.length; i++) {
+									if (game.players[i].isIgnored()) continue;
 									if (game.players[i].side) {
 										side1.push(game.players[i]);
 									} else {
@@ -8491,7 +8489,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							return;
 						}
 					} else {
-						var me = game.me._trueMe || game.me;
+						const me = game.me._trueMe || game.me;
 						if (_status.mode == "four" || _status.mode == "guandu") {
 							if (this.identity == "zhu") {
 								game.over(this.side != me.side);
@@ -8500,9 +8498,10 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 									var hs = this.getCards("h");
 									if (hs.length) source.gain(hs, this, "giveAuto");
 								}
-								var side1 = [],
+								const side1 = [],
 									side2 = [];
 								for (var i = 0; i < game.players.length; i++) {
+									if (game.players[i].isIgnored()) continue;
 									if (game.players[i].side) {
 										side1.push(game.players[i]);
 									} else {
@@ -8521,13 +8520,9 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							}
 							return;
 						} else if (_status.mode == "two") {
-							var friend;
-							for (var i = 0; i < game.players.length; i++) {
-								if (game.players[i].side == this.side) {
-									friend = game.players[i];
-									break;
-								}
-							}
+							const friend = game.filterPlayer(current => {
+								return p.side == this.side && !p.isIgnored();
+							})[0];
 							if (_status.replacetwo) {
 								if (this.replacetwo) {
 									game.replacePlayerTwo(this, this.replacetwo);
@@ -8552,24 +8547,24 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							return;
 						} else if (_status.mode == "siguo") {
 							if (
-								game.players.length == 1 ||
-								(game.players.length == 2 && game.players[0].side == game.players[1].side)
+								get.notIgnored() == 1 ||
+								(get.notIgnored() == 2 && game.players[0].side == game.players[1].side)
 							) {
 								game.over(me.side == game.players[0].side);
 							}
-							var assignzhibao = function () {
-								var list = game.players.slice(0);
-								var max = 0;
-								var list2 = [];
-								for (var i = 0; i < arguments.length; i++) {
+							const assignzhibao = function () {
+								const list = game.players.slice(0);
+								let max = 0;
+								const list2 = [];
+								for (let i = 0; i < arguments.length; i++) {
 									list.remove(arguments[i]);
 								}
-								for (var i = 0; i < list.length; i++) {
+								for (let i = 0; i < list.length; i++) {
 									if (list[i].storage.longchuanzhibao > max) {
 										max = list[i].storage.longchuanzhibao;
 									}
 								}
-								for (var i = 0; i < list.length; i++) {
+								for (let i = 0; i < list.length; i++) {
 									if (list[i].storage.longchuanzhibao == max) {
 										if (list2.length) {
 											list2 = list;
@@ -8579,16 +8574,16 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 										}
 									}
 								}
-								for (var i = 0; i < arguments.length; i++) {
-									for (var j = 0; j < arguments[i].storage.longchuanzhibao; j++) {
-										var current = list2.randomGet();
+								for (let i = 0; i < arguments.length; i++) {
+									for (let j = 0; j < arguments[i].storage.longchuanzhibao; j++) {
+										const current = list2.randomGet();
 										if (!current.storage._longchuanzhibao) {
 											current.storage._longchuanzhibao = 1;
 										} else {
 											current.storage._longchuanzhibao++;
 										}
 									}
-									for (var j = 0; j < list2.length; j++) {
+									for (let j = 0; j < list2.length; j++) {
 										if (list2[j].storage._longchuanzhibao) {
 											arguments[i].line(list2[j], "green");
 											list2[j].gainZhibao(
@@ -8645,7 +8640,11 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								"杀敌: " + get.cnNumber(_status.enemyDied.length, true);
 						}
 
-						var list = this.side == me.side ? _status.friend : _status.enemy;
+						const friends = _status.friend.filter(p => !p.isIgnored());
+						const enemies = _status.enemy.filter(p => !p.isIgnored());
+						const friends2 = game.friend.filter(p => !p.isIgnored());
+						const enemies2 = game.enemy.filter(p => !p.isIgnored());
+						const list = this.side == me.side ? friends : enemies;
 						if (
 							(list.length == 0 && lib.storage.noreplace_end) ||
 							(lib.storage.zhu &&
@@ -8653,21 +8652,21 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								this.identity == "zhu" &&
 								game.players.length > 2)
 						) {
-							if (game.friend.includes(this)) {
+							if (friends2.includes(this)) {
 								game.over(false);
 							} else {
 								game.over(true);
 							}
 						} else if (
-							game.friend.length == 1 &&
-							this == game.friend[0] &&
-							_status.friend.length == 0
+							friends2.length == 1 &&
+							this == friends2[0] &&
+							friends2.length == 0
 						) {
 							game.over(false);
 						} else if (
-							game.enemy.length == 1 &&
-							this == game.enemy[0] &&
-							_status.enemy.length == 0
+							enemies2.length == 1 &&
+							this == enemies2[0] &&
+							enemies.length == 0
 						) {
 							game.over(true);
 						} else {

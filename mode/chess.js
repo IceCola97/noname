@@ -830,8 +830,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						}
 					}
 				},
-				dieAfter: function (source) {
-					var player = this;
+				dieAfter(source) {
+					const player = this;
 					if (_status.friends) {
 						_status.friends.remove(this);
 					}
@@ -845,7 +845,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						ui.enemyDied.innerHTML = "杀敌: " + get.cnNumber(++_status.enemyDied, true);
 					}
 					if (player == game.friendZhu) {
-						if (game.friendViceZhu && game.friendViceZhu.isAlive()) {
+						if (this.isIgnored()) return;
+						if (game.friendViceZhu && game.friendViceZhu.isAlive() && !game.friendViceZhu.isIgnored()) {
 							game.friendZhu = game.friendViceZhu;
 							delete game.friendViceZhu;
 							game.friendZhu.node.identity.lastChild.innerHTML = "将";
@@ -855,7 +856,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							return;
 						}
 					} else if (player == game.enemyZhu) {
-						if (game.enemyViceZhu && game.enemyViceZhu.isAlive()) {
+						if (this.isIgnored()) return;
+						if (game.enemyViceZhu && game.enemyViceZhu.isAlive() && !game.enemyViceZhu.isIgnored()) {
 							game.enemyZhu = game.enemyViceZhu;
 							delete game.enemyViceZhu;
 							game.enemyZhu.node.identity.lastChild.innerHTML = "帅";
@@ -926,6 +928,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								game.replaceChessPlayer(_status.replacelist.randomRemove());
 								return;
 							} else if (get.config("noreplace_end")) {
+								if (this.isIgnored()) return;
 								game.over(player.side != game.me.side);
 								return;
 							} else if (notend) {
@@ -942,6 +945,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								game.replaceChessPlayer(_status.enemyreplacelist.randomRemove(), true);
 								return;
 							} else if (get.config("noreplace_end")) {
+								if (this.isIgnored()) return;
 								game.over(player.side != game.me.side);
 								return;
 							} else if (notend) {
@@ -949,6 +953,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							}
 						}
 					}
+					if (this.isIgnored()) return;
 					game.over(game.me.side == game.players[0].side);
 				},
 				$draw_old: function (num) {

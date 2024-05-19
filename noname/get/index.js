@@ -2664,6 +2664,26 @@ export class Get {
 	noSelected() {
 		return ui.selected.buttons.length + ui.selected.cards.length + ui.selected.targets.length == 0;
 	}
+	/**
+	 * 根据身份获取参与到胜负计算的存活人数
+	 * 
+	 * @param {string?} identity 
+	 * @returns {number} 
+	 */
+	notIgnored(identity = null) {
+		if(identity == null) return game.countPlayer(p => !p.isIgnored(), true);
+		return game.countPlayer(p => p.identity == identity && !p.isIgnored(), true);
+	}
+	/**
+	 * 根据身份获取参与到胜负计算的总人数
+	 * 
+	 * @param {string?} identity 
+	 * @returns {number} 
+	 */
+	notIgnored2(identity = null) {
+		if(identity == null) return game.countPlayer2(p => !p.isIgnored(), true);
+		return game.countPlayer2(p => p.identity == identity && !p.isIgnored(), true);
+	}
 	population(identity) {
 		return identity == undefined ? game.players.length + game.dead.length : game.players.filter(current => current.identity == identity).length;
 	}

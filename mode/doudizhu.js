@@ -337,13 +337,14 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					delete _status.clickingidentity;
 				}
 			},
-			checkResult: function () {
-				var me = game.me._trueMe || game.me;
+			checkResult() {
+				const me = game.me._trueMe || game.me;
+				if (game.zhu.isIgnored()) return;
 				if (game.zhu.isAlive()) {
 					if (
 						_status.mode != "online" &&
 						(_status.mode != "binglin" || game.roundNumber < 3) &&
-						game.players.length > 1
+						get.notIgnored() > 1
 					)
 						return;
 					if (me == game.zhu) {
@@ -2073,7 +2074,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						this.node.dieidentity.style.transform = "";
 					}
 				},
-				dieAfter: function (source) {
+				dieAfter(source) {
+					if (this.isIgnored()) return;
 					if (
 						_status.mode == "binglin" &&
 						source &&

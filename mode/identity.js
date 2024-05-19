@@ -806,36 +806,40 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					delete _status.clickingidentity;
 				}
 			},
-			checkResult: function () {
-				var me = game.me._trueMe || game.me;
+			checkResult() {
+				const me = game.me._trueMe || game.me;
 				if (_status.brawl && _status.brawl.checkResult) {
 					_status.brawl.checkResult();
 					return;
 				} else if (_status.mode == "purple") {
-					var winner = [];
-					var loser = [];
-					var ye = game.filterPlayer(
+					const winner = [];
+					const loser = [];
+					const ye = game.filterPlayer(
 						function (current) {
+							if(current.isIgnored()) return false;
 							return ["rYe", "bYe"].includes(current.identity);
 						},
 						null,
 						true
 					);
-					var red = game.filterPlayer(
+					const red = game.filterPlayer(
 						function (current) {
+							if(current.isIgnored()) return false;
 							return ["rZhu", "rZhong", "bNei"].includes(current.identity);
 						},
 						null,
 						true
 					);
-					var blue = game.filterPlayer(
+					const blue = game.filterPlayer(
 						function (current) {
+							if(current.isIgnored()) return false;
 							return ["bZhu", "bZhong", "rNei"].includes(current.identity);
 						},
 						null,
 						true
 					);
 					game.countPlayer2(function (current) {
+						if(current.isIgnored()) return false;
 						switch (current.identity) {
 							case "rZhu":
 								if (ye.length == 0 && game.bZhu.isDead()) winner.push(current);
@@ -861,12 +865,12 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								break;
 						}
 					}, true);
-					var winner2 = winner.slice(0);
-					var loser2 = loser.slice(0);
-					for (var i = 0; i < winner.length; i++) {
+					const winner2 = winner.slice(0);
+					const loser2 = loser.slice(0);
+					for (let i = 0; i < winner.length; i++) {
 						if (winner[i].isDead()) winner.splice(i--, 1);
 					}
-					for (var i = 0; i < loser.length; i++) {
+					for (let i = 0; i < loser.length; i++) {
 						if (loser[i].isDead()) loser.splice(i--, 1);
 					}
 					if (winner.length > 0 || loser.length == game.players.length) {
@@ -893,7 +897,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					return;
 				}
 				if (!game.zhu) {
-					if (get.population("fan") == 0) {
+					if (get.notIgnored("fan") == 0) {
 						switch (me.identity) {
 							case "fan":
 								game.over(false);
@@ -908,7 +912,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 								game.over();
 								break;
 						}
-					} else if (get.population("zhong") == 0) {
+					} else if (get.notIgnored("zhong") == 0) {
 						switch (me.identity) {
 							case "fan":
 								game.over(true);
@@ -926,7 +930,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					}
 					return;
 				}
-				if (game.zhu.isAlive() && get.population("fan") + get.population("nei") > 0) return;
+				if (game.zhu.isAlive() && get.notIgnored("fan") + get.notIgnored("nei") > 0) return;
 				if (game.zhong) {
 					game.zhong.identity = "zhong";
 				}
@@ -939,8 +943,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					}
 				} else if (me.identity == "nei") {
 					if (
-						game.players.length ==
-							1 + game.players.filter((i) => i.identity == "commoner").length &&
+						get.notIgnored() ==
+							1 + get.notIgnored("commoner") &&
 						me.isAlive()
 					) {
 						game.over(true);
@@ -949,7 +953,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					}
 				} else if (me.identity == "fan") {
 					if (
-						(get.population("fan") + get.population("zhong") > 0 || get.population("nei") > 1) &&
+						(get.notIgnored("fan") + get.notIgnored("zhong") > 0 || get.notIgnored("nei") > 1) &&
 						game.zhu.classList.contains("dead")
 					) {
 						game.over(true);
@@ -974,7 +978,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						(player.identity == "commoner" && player.isAlive())
 					);
 				} else if (
-					(game.players.length == 1 + game.players.filter((i) => i.identity == "commoner").length &&
+					(get.notIgnored() == 1 + get.notIgnored("commoner") &&
 						game.players[0].identity == "nei") ||
 					game.players[0].identity == "commoner"
 				) {
@@ -3098,7 +3102,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						source.discard(source.getCards("he"));
 					}
 				},
-				dieAfter: function (source) {
+				dieAfter(source) {
+					if (this.isIgnored()) return;
 					if (!this.identityShown) {
 						game.broadcastAll(
 							function (player, identity, identity2) {
@@ -3130,10 +3135,10 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					}
 					game.checkResult();
 					if (_status.mode == "purple") {
-						var red = [];
-						var blue = [];
+						const red = [];
+						const blue = [];
 						game.countPlayer(function (current) {
-							var identity = current.identity.slice(1);
+							const identity = current.identity.slice(1);
 							if (identity != "Zhu") {
 								if (current.identity.indexOf("r") == 0) red.push(current);
 								else blue.push(current);
@@ -3143,6 +3148,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						return;
 					}
 					if (game.zhu && game.zhu.isZhu) {
+						// 这里改不改喵？
 						if (
 							(get.population("zhong") + get.population("nei") == 0 ||
 								get.population("zhong") + get.population("fan") == 0) &&
@@ -3176,9 +3182,9 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							game.zhu.ai.shown = 1;
 							game.zhu.setIdentity();
 							game.zhu.isZhu = true;
-							var skills = player.getStockSkills(true, true).filter((skill) => {
+							const skills = player.getStockSkills(true, true).filter((skill) => {
 								if (player.hasSkill(skill)) return false;
-								var info = get.info(skill);
+								const info = get.info(skill);
 								return info && info.zhuSkill;
 							});
 							if (skills.length) {
@@ -3188,7 +3194,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							if (lib.config.animation && !lib.config.low_performance) game.zhu.$legend();
 							delete game.zhong;
 							if (_status.clickingidentity && _status.clickingidentity[0] == game.zhu) {
-								for (var i = 0; i < _status.clickingidentity[1].length; i++) {
+								for (let i = 0; i < _status.clickingidentity[1].length; i++) {
 									_status.clickingidentity[1][i].delete();
 									_status.clickingidentity[1][i].style.transform = "";
 								}
@@ -3200,16 +3206,16 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					}
 
 					if (!_status.over) {
-						var giveup;
-						if (get.population("fan") + get.population("nei") == 1) {
-							for (var i = 0; i < game.players.length; i++) {
+						let giveup;
+						if (get.notIgnored("fan") + get.notIgnored("nei") == 1) {
+							for (let i = 0; i < game.players.length; i++) {
 								if (game.players[i].identity == "fan" || game.players[i].identity == "nei") {
 									giveup = game.players[i];
 									break;
 								}
 							}
 						} else if (
-							get.population("zhong") + get.population("mingzhong") + get.population("nei") ==
+							get.notIgnored("zhong") + get.notIgnored("mingzhong") + get.notIgnored("nei") ==
 							0
 						) {
 							giveup = game.zhu;

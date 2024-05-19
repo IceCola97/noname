@@ -8844,6 +8844,10 @@ export class Player extends HTMLDivElement {
 		}
 		return false;
 	}
+	// 萌喵的任务喵
+	isIgnored() {
+		return !!this._ignored;
+	}
 	checkShow(skill, showonly) {
 		var sourceSkill = get.info(skill);
 		var noshow = false;
