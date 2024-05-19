@@ -457,17 +457,19 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 		},
 		element: {
 			player: {
-				dieAfter: function () {
+				dieAfter() {
+					if(this.isIgnored()) return;
 					if (this != game.boss) {
 						this.storage.boss_chongzheng = 0;
 					}
 					if (game.bossinfo.checkResult && game.bossinfo.checkResult(this) === false) {
 						return;
 					}
+					// `boss` 就不用忽略了吧……喵？
 					if (
 						this == game.boss ||
 						!game.hasPlayer(function (current) {
-							return !current.side;
+							return !current.side && !current.isIgnored();
 						}, true)
 					) {
 						game.checkResult();

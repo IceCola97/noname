@@ -1063,10 +1063,11 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 									game.log(this, "失去了技能", "#g【" + get.translation(skill) + "】");
 									this.removeSkill(skill);
 								},
-								dieAfter: function () {
-									var evt = _status.event.getParent("phase");
+								dieAfter() {
+									if (this.isIgnored()) return;
+									const evt = _status.event.getParent("phase");
 									if (evt) evt._lastDead = this;
-									if (game.playerx().length == 1) game.over(game.me.isAlive());
+									if (get.notIgnored() == 1) game.over(game.me.isAlive());
 								},
 								$dieAfter: function () {},
 								hasUnknown: function () {

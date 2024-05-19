@@ -296,8 +296,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						}
 					}
 				},
-				dieAfter: function (source) {
-					var player = this;
+				dieAfter(source) {
+					const player = this;
 					if (_status.friends) {
 						_status.friends.remove(this);
 					}
@@ -305,7 +305,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						_status.enemies.remove(this);
 					}
 					if (player == game.me) {
-						for (var i = 0; i < game.players.length; i++) {
+						for (let i = 0; i < game.players.length; i++) {
 							if (game.players[i].side == player.side) {
 								game.modeSwapPlayer(game.players[i]);
 							}

@@ -22120,18 +22120,19 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					game.players[i].showCharacter(2, false);
 				}
 			},
-			tryResult: function () {
-				var map = {},
+			tryResult() {
+				const map = {},
 					sides = [],
 					pmap = _status.connectMode ? lib.playerOL : game.playerMap,
 					hiddens = [];
-				for (var i of game.players) {
+				const players = get.notIgnored();
+				for (const i of players) {
 					if (i.identity == "unknown") {
 						hiddens.push(i);
 						continue;
 					}
-					var added = false;
-					for (var j of sides) {
+					let added = false;
+					for (const j of sides) {
 						if (i.isFriendOf(pmap[j])) {
 							added = true;
 							map[j].push(i);
@@ -22162,7 +22163,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 							map[sides[1]][0].showGiveup();
 					}
 				} else {
-					var isYe = function (player) {
+					const isYe = function (player) {
 						return player.identity != "ye" && lib.character[player.name1][1] == "ye";
 					};
 					if (!hiddens.length) {
@@ -22179,13 +22180,13 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						}, sides[0]);
 						game.checkResult();
 					} else {
-						var identity = map[sides[0]][0].identity;
+						const identity = map[sides[0]][0].identity;
 						if (identity == "ye") return;
-						for (var i of map[sides[0]]) {
+						for (const i of map[sides[0]]) {
 							if (isYe(i)) return;
 						}
-						for (var ind = 0; ind < hiddens.length; ind++) {
-							var current = hiddens[ind];
+						for (let ind = 0; ind < hiddens.length; ind++) {
+							const current = hiddens[ind];
 							if (
 								isYe(current) ||
 								current.getGuozhanGroup(2) != identity ||
@@ -25310,14 +25311,15 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 						else source.discard(source.getCards("he"));
 					}
 				},
-				dieAfter: function (source) {
+				dieAfter(source) {
+					if (this.isIgnored()) return;
 					this.showCharacter(2);
 					if (get.is.jun(this.name1)) {
 						if (source && source.identity == this.identity) source.shijun = true;
 						else if (source && source.identity != "ye") source.shijun2 = true;
-						var yelist = [];
-						for (var i = 0; i < game.players.length; i++) {
-							if (game.players[i].identity == this.identity) {
+						const yelist = [];
+						for (const player of game.players) {
+							if (player.identity == this.identity) {
 								yelist.push(game.players[i]);
 							}
 						}

@@ -1482,7 +1482,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 		},
 		element: {
 			player: {
-				dieAfter: function () {
+				dieAfter() {
+					if (this.isIgnored()) return;
 					if (_status.mode != "normal" || _status.characterChoice[this.identity].length <= 3)
 						game.checkResult();
 				},

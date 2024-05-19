@@ -921,8 +921,8 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					}
 					return this;
 				},
-				dieAfter: function (source) {
-					var dead = this;
+				dieAfter(source) {
+					if (this.isIgnored()) return;
 					if (game.me.isDead()) {
 						if (!_status.mylist.length) {
 							_status.friendCount.innerHTML = "友军: " + get.cnNumber(0);
