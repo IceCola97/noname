@@ -5210,6 +5210,19 @@ const skills = {
 		subSkill: {
 			used: {},
 		},
+		ai: {
+			effect: {
+				target(card, player, target) {
+					if (get.tag(card, "save")) {
+						if (_status.currentPhase == player) return 0;
+						if (target.maxHp > 1 && player != target) return 0;
+					}
+					if (get.tag(card, "recover")) {
+						if (_status.currentPhase == player) return 0;
+					}
+				},
+			},
+		}
 	},
 	nsshishou: {
 		trigger: { player: "loseEnd" },
@@ -5241,18 +5254,7 @@ const skills = {
 			},
 		},
 		ai: {
-			halfneg: true,
-			effect: {
-				target(card, player, target) {
-					if (get.tag(card, "save")) {
-						if (_status.currentPhase == player) return 0;
-						if (target.maxHp > 1 && player != target) return 0;
-					}
-					if (get.tag(card, "recover")) {
-						if (_status.currentPhase == player) return 0;
-					}
-				},
-			},
+			neg: true,
 		},
 	},
 	nsduijue: {
@@ -5319,12 +5321,16 @@ const skills = {
 		},
 	},
 	nsshuangxiong: {
+		unique: true,
 		trigger: { player: "juedouBegin", target: "juedouBegin" },
 		check(event, player) {
 			return player.isTurnedOver();
 		},
 		content() {
 			player.turnOver();
+		},
+		ai: {
+			combo: "nsduijue"
 		},
 	},
 	nsguanyong: {

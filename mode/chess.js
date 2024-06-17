@@ -844,6 +844,7 @@ game.import("mode", function (lib, game, ui, get, ai, _status) {
 					if (ui.enemyDied && player.side != game.me.side) {
 						ui.enemyDied.innerHTML = "杀敌: " + get.cnNumber(++_status.enemyDied, true);
 					}
+					if (this.isIgnored()) return;
 					if (player == game.friendZhu) {
 						if (this.isIgnored()) return;
 						if (game.friendViceZhu && game.friendViceZhu.isAlive() && !game.friendViceZhu.isIgnored()) {

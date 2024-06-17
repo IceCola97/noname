@@ -2088,13 +2088,19 @@ export const Content = {
 			}
 			player.storage[current].hp = player.hp;
 			player.storage[current].maxHp = player.maxHp;
+			player.storage[current].hujia = player.hujia;
 			player.storage[current].hs = player.getCards("h");
 			player.storage[current].es = player.getCards("e");
 			player.lose(player.getCards("he"), ui.special)._triggered = null;
 
 			var cfg = player.storage[event.directresult];
 			player.storage.subplayer.name2 = event.directresult;
-			player.reinit(current, event.directresult, [cfg.hp, cfg.maxHp]);
+			player.reinit(current, event.directresult, [cfg.hp, cfg.maxHp, cfg.hujia]);
+			if (player.name == event.directresult || player.name1 == event.directresult) {
+				const groupx = cfg.group || "qun";
+				player.group = groupx;
+				player.node.name.dataset.nature = get.groupnature(groupx);
+			}
 			if (cfg.hs.length) player.directgain(cfg.hs);
 			if (cfg.es.length) player.directequip(cfg.es);
 		}
@@ -2103,11 +2109,13 @@ export const Content = {
 		"step 0";
 		if (player.storage.subplayer) {
 			var current = player.storage.subplayer.name2;
+			const goon = player.name == current || player.name1 == current;
 			if (event.remove) {
 				player.lose(player.getCards("he"), ui.discardPile)._triggered = null;
 			} else {
 				player.storage[current].hp = player.hp;
 				player.storage[current].maxHp = player.maxHp;
+				player.storage[current].hujia = player.hujia;
 				player.storage[current].hs = player.getCards("h");
 				player.storage[current].es = player.getCards("e");
 				player.lose(player.getCards("he"), ui.special)._triggered = null;
@@ -2115,11 +2123,17 @@ export const Content = {
 			player.reinit(current, player.storage.subplayer.name, [
 				player.storage.subplayer.hp,
 				player.storage.subplayer.maxHp,
+				player.storage.subplayer.hujia,
 			]);
+			if (goon) {
+				const groupx = player.storage.subplayer.group || "qun";
+				player.group = groupx;
+				player.node.name.dataset.nature = get.groupnature(groupx);
+			}
 			player.update();
 			if (event.remove) {
 				if (player.storage[current].onremove) {
-					player.storage[current].onremove(player);
+					player.storage[current].onremove(player, current);
 				}
 				delete player.storage[current];
 				player.storage.subplayer.skills.remove(current);
@@ -2178,13 +2192,20 @@ export const Content = {
 				name2: event.directresult,
 				hp: player.hp,
 				maxHp: player.maxHp,
+				hujia: player.hujia,
 				skills: event.list.slice(0),
 				hs: player.getCards("h"),
 				es: player.getCards("e"),
 				intro2: cfg.intro2,
+				group: player.group,
 			};
 			player.removeSkill(event.list);
-			player.reinit(source, name, [cfg.hp, cfg.maxHp]);
+			player.reinit(source, name, [cfg.hp, cfg.maxHp, cfg.hujia]);
+			if (player.name == name || player.name1 == name) {
+				const groupx = cfg.group || "qun";
+				player.group = groupx;
+				player.node.name.dataset.nature = get.groupnature(groupx);
+			}
 			player.addSkill("subplayer");
 			player.lose(player.getCards("he"), ui.special)._triggered = null;
 			if (cfg.hs.length) player.directgain(cfg.hs);
@@ -2608,7 +2629,7 @@ export const Content = {
 		const checkFrequent = function (info) {
 			if (player.hasSkillTag("nofrequent", false, event.skill)) return false;
 			if (typeof info.frequent == "boolean") return info.frequent;
-			if (typeof info.frequent == "function") return info.frequent(trigger, player);
+			if (typeof info.frequent == "function") return info.frequent(trigger, player, event.triggername, event.indexedData);
 			if (info.frequent == "check" && typeof info.check == "function")
 				return info.check(trigger, player);
 			return false;
@@ -2704,7 +2725,7 @@ export const Content = {
 		if (get.itemtype(targets) === "player") {
 			targets = [targets];
 		}
-		if (info.popup != false && !info.direct) {
+		if (info.popup != false && !info.direct && !("skill_popup" in result && !Boolean(result["skill_popup"]))) {
 			let popup_info = event.skill;
 			if (typeof info.popup === "string") popup_info = [event.skill, info.popup];
 			if (info.logLine === false) player.logSkill(popup_info, false, info.line);
@@ -3131,7 +3152,6 @@ export const Content = {
 		game.syncState();
 		game.addVideo("phaseChange", player);
 		if (game.phaseNumber == 1) {
-			delete player._start_cards;
 			if (lib.configOL.observe) {
 				lib.configOL.observeReady = true;
 				game.send("server", "config", lib.configOL);
@@ -3538,6 +3558,9 @@ export const Content = {
 					}
 				}
 			}
+			else{
+				delete event.openskilldialog;
+			}
 		} else if (event.isOnline()) {
 			event.send();
 		} else {
@@ -3659,7 +3682,7 @@ export const Content = {
 					info.chooseControl ? result : result.links,
 					player
 				);
-				lib.skill[event.buttoned + "_backup"].sourceSkill = event.buttoned;
+				lib.skill[event.buttoned + "_backup"].sourceSkill = lib.skill[event.buttoned].sourceSkill ? lib.skill[event.buttoned].sourceSkill : event.buttoned;
 				if (game.online) {
 					event._sendskill = [event.buttoned + "_backup", lib.skill[event.buttoned + "_backup"]];
 				} else {
@@ -3754,6 +3777,9 @@ export const Content = {
 						if (event.prompt) event.dialog = ui.create.dialog(event.prompt);
 						if (event.prompt2) event.dialog.addText(event.prompt2);
 					}
+				}
+				else{
+					delete event.openskilldialog;
 				}
 			} else if (event.isOnline()) {
 				event.send();
@@ -3868,7 +3894,7 @@ export const Content = {
 					info.chooseControl ? result : result.links,
 					player
 				);
-				lib.skill[event.buttoned + "_backup"].sourceSkill = event.buttoned;
+				lib.skill[event.buttoned + "_backup"].sourceSkill = lib.skill[event.buttoned].sourceSkill ? lib.skill[event.buttoned].sourceSkill : event.buttoned;
 				if (game.online) {
 					event._sendskill = [event.buttoned + "_backup", lib.skill[event.buttoned + "_backup"]];
 				} else {
@@ -5604,7 +5630,7 @@ export const Content = {
 					controls.remove("cancel2");
 					if ((event.direct && controls.length == 1) || event.forceDirect) {
 						event.result = {
-							control: event.controls[0].link,
+							control: event.controls[0],
 							links: get.links([event.controls[0]]),
 						};
 						return;
@@ -5620,7 +5646,7 @@ export const Content = {
 					controls.remove("cancel2");
 					if ((event.direct && controls.length == 1) || event.forceDirect) {
 						event.result = {
-							control: event.controls[0].link,
+							control: event.controls[0],
 							links: get.links([event.controls[0]]),
 						};
 						return;
@@ -5862,6 +5888,7 @@ export const Content = {
 							} else if (!event.dialog.noforcebutton) {
 								event.dialog.classList.add("forcebutton-auto");
 							}
+							directh = false;
 						} else {
 							event.dialog.add([hs, "blank"]);
 						}
@@ -6056,6 +6083,7 @@ export const Content = {
 							} else if (!event.dialog.noforcebutton) {
 								event.dialog.classList.add("forcebutton-auto");
 							}
+							directh = false;
 						} else {
 							event.dialog.add([hs, "blank"]);
 						}
@@ -6273,6 +6301,7 @@ export const Content = {
 							} else if (!event.dialog.noforcebutton) {
 								event.dialog.classList.add("forcebutton-auto");
 							}
+							directh = false;
 						} else {
 							event.dialog.add([hs, "blank"]);
 						}
