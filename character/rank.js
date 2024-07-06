@@ -1161,6 +1161,9 @@ window.noname_character_rank = {
 		"huan_jiangwei",
 		"budugen",
 		"jsrg_dongbai",
+		"yj_zhonghui",
+		"wuhujiang",
+		"dc_noname",
 	],
 	b: [
 		"huan_zhugeliang",
@@ -2010,6 +2013,8 @@ window.noname_character_rank = {
 			"jsrg_yuanshao",
 		],
 		epic: [
+			"wuhujiang",
+			"yj_zhonghui",
 			"bianyue",
 			"budugen",
 			"huan_guojia",
@@ -2317,6 +2322,7 @@ window.noname_character_rank = {
 			"xin_simayi",
 		],
 		rare: [
+			"dc_noname",
 			"ol_liubiao",
 			"huan_weiyan",
 			"ol_caifuren",
