@@ -7,10 +7,13 @@ import { AsyncFunction } from "../../util/index.js";
 import security from "../../util/security.js";
 import ContentCompiler from "./GameEvent/compilers/dist/ContentCompiler.js";
 
+/**
+ * @implements { PromiseLike<Omit<GameEvent,"then">> }
+ */
 export class GameEvent {
 	/**
-	 * @param {string | GameEvent} [name]
-	 * @param {boolean} [trigger]
+	 * @param { string | GameEvent } [name]
+	 * @param { boolean } [trigger]
 	 */
 	constructor(name = "", trigger = true) {
 		if (name instanceof GameEvent) {
@@ -31,7 +34,9 @@ export class GameEvent {
 		if (trigger && !game.online) this._triggered = 0;
 	}
 	static initialGameEvent() {
-		return new GameEvent().finish();
+		const event = new GameEvent();
+		event.finish();
+		return event;
 	}
 	/**
 	 * @type { Result }
@@ -1002,16 +1007,43 @@ export class GameEvent {
 	 * @template TResult1
 	 * @template TResult2 
 	 * Attaches callbacks for the resolution and/or rejection of the Promise.
-	 * @param { ((event: Result & {result: Result}) => TResult1 | Promise<TResult1>) | null } [onfulfilled] The callback to execute when the Promise is resolved.
+	 * @param { ((event: Omit<GameEvent,"then">) => TResult1 | Promise<TResult1>) | null } [onfulfilled] The callback to execute when the Promise is resolved.
 	 * @param { ((reason: any) => TResult2 | Promise<TResult2>) | null } [onrejected] The callback to execute when the Promise is rejected.
 	 * @returns { Promise<TResult1 | TResult2> } A Promise for the completion of which ever callback is executed.
 	 */
 	then(onfulfilled, onrejected) {
 		return (this.parent ? this.parent.waitNext() : this.start()).then(onfulfilled ? () => {
-			const result = typeof this.result === "object" && this.result !== null ? { ...this.result } : Object(this.result);
-			result.result = this.result;
-			return onfulfilled(result)
+			return onfulfilled(new Proxy(this, {
+				get(target, p, receiver){
+					if(p === "then") return void 0;
+					return target[p];
+				}
+			}));
 		} : onfulfilled, onrejected);
+	}
+	/**
+	 * @template TResult
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.* @param { ((reason: any) => TResult | Promise<TResult>) | null } [onrejected] The callback to execute when the Promise is rejected.
+	 * @returns { Promise<Omit<GameEvent,"then"> | TResult> } A Promise for the completion of which ever callback is executed.
+	 */
+	catch(onrejected) {
+		return this.then(void 0, onrejected);
+	}
+	/**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+	 * @param { (() => void) | null } [onfinally] The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns { Promise<Omit<GameEvent,"then">> } A Promise for the completion of the callback.
+	 */
+	finally(onfinally) {
+		return this.then((result)=>{
+			if(onfinally) onfinally();
+			return result;
+		}, (err)=>{
+			if(onfinally) onfinally();
+			throw err;
+		});
 	}
 	/**
 	 * @type { Promise<void> | null }
@@ -1027,7 +1059,6 @@ export class GameEvent {
 				this.player.skipList.remove(this.name);
 				if (lib.phaseName.includes(this.name)) this.player.getHistory("skipped").add(this.name);
 				this.trigger(this.name + "Skipped");
-				this.resolved = true;
 				return;
 			}
 
@@ -1080,7 +1111,7 @@ export class GameEvent {
 				if (this.next.length <= 1) await _status.pauseManager.waitPause();
 				if (_status.tempEvent){
 					if (_status.tempEvent === this) {
-						_status.tempEvent = null;
+						_status.tempEvent = void 0;
 					} else {
 						this.cancel(true, null, "notrigger");
 						return result;
