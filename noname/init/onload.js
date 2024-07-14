@@ -7,10 +7,10 @@ import { _status } from "../status/index.js";
 import { ui } from "../ui/index.js";
 import { gnc } from "../gnc/index.js";
 import { importMode } from "./import.js";
-import { jumpToCatchBlock } from "../util/index.js";
 import { Mutex } from "../util/mutex.js";
+import { load } from "../util/config.js";
 
-export async function onload(resetGameTimeout) {
+export async function onload() {
 	const libOnload = lib.onload;
 	delete lib.onload;
 	await runCustomContents(libOnload);
@@ -86,7 +86,6 @@ export async function onload(resetGameTimeout) {
 	lib.onloadSplashes.forEach(splash => {
 		lib.configMenu.appearence.config.splash_style.item[splash.id] = splash.name;
 	});
-	Reflect.set(window, "resetGameTimeout", resetGameTimeout);
 
 	// 改不动，暂时不改了
 	const proceed2 = async () => {
@@ -533,10 +532,10 @@ export async function onload(resetGameTimeout) {
 	localStorage.removeItem(lib.configprefix + "directstart");
 	if (!lib.imported.mode?.[lib.config.mode]) {
 		window.inSplash = true;
-		clearTimeout(resetGameTimeout);
+		clearTimeout(window.resetGameTimeout);
 
-		if (lib.config.splash_style == undefined) game.saveConfig("splash_style", lib.onloadSplashes[0].id);
-		let splash = lib.onloadSplashes.find(item => item.id == lib.config.splash_style);
+		if (typeof lib.config.splash_style == "undefined") game.saveConfig("splash_style", lib.onloadSplashes[0].id);
+		let splash = lib.onloadSplashes.find(item => item.id === lib.config.splash_style);
 		if (!splash) splash = lib.onloadSplashes[0];
 
 		let node = ui.create.div("#splash", document.body);
@@ -553,7 +552,9 @@ export async function onload(resetGameTimeout) {
 		game.saveConfig("mode", result);
 		await importMode(result);
 	}
+	lib.storage = (await load(lib.config.mode, "data")) || {};
 
+	/*
 	if (!lib.db) {
 		try {
 			lib.storage = JSON.parse(localStorage.getItem(lib.configprefix + lib.config.mode));
@@ -566,6 +567,7 @@ export async function onload(resetGameTimeout) {
 		let storage = await game.getDB("data", lib.config.mode);
 		lib.storage = storage || {};
 	}
+	 */
 
 	const libOnload2 = lib.onload2;
 	delete lib.onload2;
@@ -671,7 +673,7 @@ async function tryLoadCustomStyle(id, keys, fallback) {
 
 	if (lib.config[id] === "custom") {
 		await Promise.allSettled(
-			Object.entries(keys).map(async (key, callback) => {
+			Object.entries(keys).map(async ([key, callback]) => {
 				const fileToLoad = await game.getDB("image", key);
 				if (fileToLoad) {
 					const fileLoadedEvent = await new Promise((resolve, reject) => {
@@ -681,7 +683,7 @@ async function tryLoadCustomStyle(id, keys, fallback) {
 						fileReader.readAsDataURL(fileToLoad, "UTF-8");
 					});
 
-					await callback(fileLoadedEvent.target.result);
+					await callback?.(fileLoadedEvent.target.result);
 				} else {
 					fallback?.();
 				}

@@ -515,7 +515,7 @@ const skills = {
 				charlotte: true,
 				mod: {
 					cardEnabled2(card, player) {
-						if (player.getStorage("jsrgguanjue_ban").includes(get.suit(card))) return false;
+						if (player.getStorage("dragchaojue_buff").includes(get.suit(card))) return false;
 					},
 				},
 				marktext: "绝",
@@ -996,7 +996,6 @@ const skills = {
 		audio: 1,
 		trigger: { global: "useCard" },
 		direct: true,
-		shaRelated: true,
 		filter: function (event, player) {
 			return event.player != player && event.card.name == "sha" && player.countCards("he") > 0 && event.player.isPhaseUsing();
 		},
@@ -4673,12 +4672,12 @@ const skills = {
 		enable: "phaseUse",
 		usable: 1,
 		filter: function (event, player) {
-			var zhu = get.mode() == "identity" ? get.zhu(player) : game.filterPlayer(i => i.getSeatNum() == 1)[0];
+			var zhu = get.zhu(player) || game.filterPlayer(i => i.getSeatNum() == 1)[0];
 			if (!zhu) return false;
 			return zhu.countGainableCards(player, zhu == player ? "ej" : "hej");
 		},
 		filterTarget: function (card, player, target) {
-			var zhu = get.mode() == "identity" ? get.zhu(player) : game.filterPlayer(i => i.getSeatNum() == 1)[0];
+			var zhu = get.zhu(player) || game.filterPlayer(i => i.getSeatNum() == 1)[0];
 			return target == zhu;
 		},
 		selectTarget: 1,
