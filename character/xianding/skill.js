@@ -2495,13 +2495,8 @@ const skills = {
 					return get.distance(player, target) <= 1 && target.countGainableCards(player, "e");
 				})
 				.set("ai", target => {
-					const player = get.event("player"),
-						att = get.attitude(player, target);
-					let num = 0;
-					if (target.hasSkill("gzxiaoji")) num += 2.5;
-					if (target.isDamaged() && target.getEquip("baiyin")) num += 2.5;
-					if (target.hasSkill("xuanlve")) num += 2;
-					return get.sgn(att) * num + (target == player ? 1 : 0);
+					const player = get.event("player");
+					return get.effect(target, { name: "shunshou_copy", position: "e" }, player, player);
 				});
 			if (bool) {
 				const aim = targets[0];
@@ -9619,7 +9614,8 @@ const skills = {
 							current.getStat().isSkipped = true;
 						});
 					var evt = player.insertPhase();
-					delete evt.skill;
+					if (trigger.skill) evt.skill = trigger.skill;
+					else delete evt.skill;
 					game.broadcastAll(function (player) {
 						player.classList.remove("glow_phase");
 						delete _status.currentPhase;
@@ -16099,7 +16095,7 @@ const skills = {
 		audio: 2,
 		trigger: { player: "shiyuanBegin" },
 		filter: function (event, player) {
-			return _status.currentPhase.group == "qun";
+			return _status.currentPhase && _status.currentPhase.group == "qun";
 		},
 		zhuSkill: true,
 		forced: true,
