@@ -4729,12 +4729,12 @@ const skills = {
 			while (player.isIn() && trigger.player.isIn()) {
 				await game.asyncDraw([trigger.player, player]);
 				await game.asyncDelayx();
-				var getGainSuit = function (player) {
-					var last = player.getHistory("gain", function (evt) {
+				let getGainSuit = function (player) {
+					let last = player.getHistory("gain", function (evt) {
 						return evt.getParent(2) == event;
 					});
 					if (last.length) {
-						var evt = last.pop();
+						let evt = last.pop();
 						if (evt.cards.length == 1 && player.getCards("h").includes(evt.cards[0])) return get.suit(evt.cards[0], player);
 					} else return player;
 				}, bool;
@@ -5352,7 +5352,7 @@ const skills = {
 	rewansha: {
 		audio: "wansha",
 		audioname: ["re_jiaxu", "boss_lvbu3"],
-		audioname2: { shen_simayi: "jilue_wansha", xin_simayi: "jilue_wansha" },
+		audioname2: { shen_simayi: "jilue_wansha", xin_simayi: "jilue_wansha", new_simayi: "jilue_wansha" },
 		global: "rewansha_global",
 		trigger: { global: "dyingBegin" },
 		forced: true,
@@ -13580,7 +13580,7 @@ const skills = {
 	},
 	reguicai: {
 		audio: 2,
-		audioname2: { xin_simayi: "jilue_guicai" },
+		audioname2: { xin_simayi: "jilue_guicai", new_simayi: "jilue_guicai" },
 		trigger: { global: "judge" },
 		direct: true,
 		filter: function (event, player) {

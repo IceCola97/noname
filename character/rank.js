@@ -409,6 +409,7 @@ window.noname_character_rank = {
 		"mp_wangrong",
 		"mb_wangjing",
 		"zhangbu",
+		"licuilianzhaoquanding",
 	],
 	am: [
 		"tw_yanliang",
@@ -733,6 +734,7 @@ window.noname_character_rank = {
 		"sb_gongsunzan",
 		"yue_zoushi",
 		"xin_simayi",
+		"new_simayi",
 	],
 	bp: [
 		"ol_peixiu",
@@ -1138,6 +1140,8 @@ window.noname_character_rank = {
 		"ol_wangyi",
 		"chengji",
 		"mb_sp_guanqiujian",
+		"mb_wenqin",
+		"mb_simazhou",
 		"jsrg_songhuanghou",
 		"jsrg_dongzhuo",
 		"jsrg_zhanghuan",
@@ -2326,6 +2330,7 @@ window.noname_character_rank = {
 			"xin_simayi",
 			"mb_wangjing",
 			"zhangbu",
+			"new_simayi",
 		],
 		rare: [
 			"dc_noname",
@@ -2849,6 +2854,8 @@ window.noname_character_rank = {
 			"clan_wangmingshan",
 			"chengji",
 			"mb_sp_guanqiujian",
+			"mb_wenqin",
+			"mb_simazhou",
 			"lizhaojiaobo",
 			"jsrg_songhuanghou",
 			"jsrg_zhangjiao",
@@ -2867,6 +2874,7 @@ window.noname_character_rank = {
 			"ol_wuguotai",
 			"mp_liuling",
 			"mp_wangrong",
+			"licuilianzhaoquanding",
 		],
 		junk: [
 			"ol_peixiu",
