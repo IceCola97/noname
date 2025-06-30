@@ -660,15 +660,7 @@ const skills = {
 						})
 					) {
 						if (card.name === "sha") {
-							if (
-								!target.mayHaveShan(
-									player,
-									"use",
-									target.getCards("h", i => {
-										return i.hasGaintag("sha_notshan");
-									})
-								)
-							) {
+							if (!target.mayHaveShan(player, "use")) {
 								return;
 							}
 						} else if (!target.mayHaveShan(player)) {
@@ -3282,31 +3274,32 @@ const skills = {
 				cardMap.addArray(cards);
 				nums.push(get.number(cards[0], false));
 			}
+
 			const videoId = lib.status.videoId++;
-			game.broadcastAll(
-				function (id, cards, list, num) {
-					const dialog = ui.create.dialog(`【摧袭】：是否令你的点数+${num}？`, cards);
-					const getName = function (target) {
-						if (target._tempTranslate) {
-							return target._tempTranslate;
-						}
-						let name = target.name;
-						if (lib.translate[name + "_ab"]) {
-							return lib.translate[name + "_ab"];
-						}
-						return get.translation(name);
-					};
-					for (let i = 0; i < list.length; i++) {
-						dialog.buttons[i].node.gaintag.innerHTML = getName(list[i]);
+			const func = (id, cards, list, num) => {
+				const dialog = ui.create.dialog(`【摧袭】：是否令你的点数+${num}？`, cards);
+				const getName = function (target) {
+					if (target._tempTranslate) {
+						return target._tempTranslate;
 					}
-					dialog.videoId = id;
-				},
-				videoId,
-				cardMap,
-				list,
-				num
-			);
-			const result2 = await player.chooseBool(`是否令你的点数+${num}？`).set("dialog", get.idDialog(videoId)).forResult();
+					let name = target.name;
+					if (lib.translate[name + "_ab"]) {
+						return lib.translate[name + "_ab"];
+					}
+					return get.translation(name);
+				};
+				for (let i = 0; i < list.length; i++) {
+					dialog.buttons[i].node.gaintag.innerHTML = getName(list[i]);
+				}
+				dialog.videoId = id;
+				return dialog;
+			};
+			if (player.isOnline2()) {
+				player.send(func, videoId, cardMap, list, num);
+			} else {
+				func(videoId, cardMap, list, num);
+			}
+			const result2 = await player.chooseBool().set("dialog", get.idDialog(videoId)).forResult();
 			game.broadcastAll("closeDialog", videoId);
 			if (result2.bool) {
 				nums[0] += num;
@@ -3699,9 +3692,9 @@ const skills = {
 	hsfunan: {
 		zhuSkill: true,
 		enable: ["chooseToUse", "chooseToRespond"],
-		usable: 1,
 		filter(event, player) {
 			if (
+				player.hasSkill("hsfunan_used") ||
 				!player.hasZhuSkill("hsfunan") ||
 				!game.hasPlayer(function (current) {
 					return current != player && current.group == "shu";
@@ -3717,8 +3710,43 @@ const skills = {
 		group: ["hsfunan_2"],
 		derivation: "rejijiang",
 		ai: {
-			order() {
-				return get.order({ name: "sha" }) + 0.3;
+			order(item, player) {
+				const order = get.order({ name: "sha" });
+				_status.debugger = _status.event;
+				if (order <= 0) {
+					return order;
+				}
+				const losehp = get.effect(player, { name: "losehp" }, player, player);
+				if (losehp > 0) {
+					return order + 0.3;
+				}
+				if (player.hp <= 1) {
+					// 避免苦肉死
+					return 0;
+				}
+				const draw = 2 * get.effect(player, { name: "draw" }, player, player);
+				if (losehp + draw > 0) {
+					// 即使不出杀收益也够了
+					return order + 0.1;
+				}
+				const eff = player.getUseValue({ name: "sha" }, null, true);
+				if (eff <= 0) {
+					return 0;
+				}
+				const maySha = Math.max(
+					...game
+						.filterPlayer(current => {
+							return player !== current && current.group === "shu" && get.attitude(player, current) > 0;
+						})
+						.map(current => {
+							return current.mayHaveSha(player, _status.event?.name === "chooseToUse" ? "use" : "respond", null, "count");
+						})
+				);
+				if (maySha < 1 && (1 - maySha) * losehp + draw < 0) {
+					// 有概率出杀但不值得崩血
+					return 0;
+				}
+				return order + 0.3;
 			},
 			respondSha: true,
 			skillTagFilter(player) {
@@ -3739,8 +3767,9 @@ const skills = {
 					return event.skill == "hsfunan";
 				},
 				forced: true,
-				log: false,
+				popup: false,
 				async content(event, trigger, player) {
+					player.addSkill("hsfunan_used");
 					const targets = game.filterPlayer(target => target != player && target.group == "shu");
 					if (!targets.length) {
 						return;
@@ -3781,6 +3810,9 @@ const skills = {
 						trigger.getParent().goto(0);
 					}
 				},
+			},
+			used: {
+				charlotte: true,
 			},
 		},
 	},
@@ -8173,7 +8205,7 @@ const skills = {
 				const { target, card } = trigger;
 				if (target.countCards("e")) {
 					await target
-						.chooseToDiscard("e", [1, Infinity])
+						.chooseToDiscard("e", [1, Infinity], "弃置装备区任意张牌，然后" + get.translation(card) + "额外结算X次（X为你装备区的牌数）")
 						.set("ai", card => {
 							if (get.event("goon")) {
 								return 0;
@@ -17597,8 +17629,7 @@ const skills = {
 				target.line(player);
 				if (bool) {
 					await player.recover(target);
-				}
-				else {
+				} else {
 					await player.draw();
 				}
 			}
@@ -18734,14 +18765,25 @@ const skills = {
 	//神刘表
 	jxxiongju: {
 		trigger: {
-			global: "phaseBefore",
+			global: ["phaseBefore", "gameDrawBegin"],
 			player: "enterGame",
 		},
 		forced: true,
 		filter(event, player) {
+			if (event.name == "gameDraw") {
+				return true;
+			}
 			return event.name != "phase" || game.phaseNumber == 0;
 		},
 		async content(event, trigger, player) {
+			if (trigger.name == "gameDraw") {
+				const me = player;
+				const numx = trigger.num;
+				trigger.num = function (player) {
+					return (player == me ? game.countGroup() : 0) + (typeof numx == "function" ? numx(player) : numx);
+				};
+				return;
+			}
 			let cards = [];
 			while (cards.length < 2) {
 				const card = game.createCard2("jingxiangshengshi", "heart", 5);
@@ -18751,7 +18793,6 @@ const skills = {
 				await player.gain(cards, "gain2");
 			}
 			const num = game.countGroup();
-			await player.draw(num);
 			await player.gainMaxHp(num);
 			await player.recover(num);
 		},
@@ -20093,13 +20134,7 @@ const skills = {
 			if (get.attitude(player, trigger.player) > 0) {
 				for (var target of trigger.targets) {
 					if (
-						!target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						) ||
+						!target.mayHaveShan(player, "use") ||
 						trigger.player.hasSkillTag(
 							"directHit_ai",
 							true,
@@ -20254,13 +20289,7 @@ const skills = {
 						for (var target of trigger.targets) {
 							var eff = get.effect(target, trigger.card, trigger.player, player);
 							if (
-								!target.mayHaveShan(
-									player,
-									"use",
-									target.getCards("h", i => {
-										return i.hasGaintag("sha_notshan");
-									})
-								) ||
+								!target.mayHaveShan(player, "use") ||
 								trigger.player.hasSkillTag(
 									"directHit_ai",
 									true,

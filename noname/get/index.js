@@ -1671,12 +1671,17 @@ export class Get extends GetCompatible {
 			return get.cnNumber(parseInt(config.number)) + "人" + get.translation(get.plainText(config.mode));
 		}
 	}
+	/**
+	 * 获取联机可用武将列表
+	 * @param { (name: string) => boolean } [func] 自定义筛选方法，符合条件的排除
+	 * @returns { string[] }
+	 */
 	charactersOL(func) {
-		var list = [];
-		var libCharacter = {};
-		for (var i = 0; i < lib.configOL.characterPack.length; i++) {
-			var pack = lib.characterPack[lib.configOL.characterPack[i]];
-			for (var j in pack) {
+		let list = [];
+		let libCharacter = {};
+		for (let i = 0; i < lib.configOL.characterPack.length; i++) {
+			const pack = lib.characterPack[lib.configOL.characterPack[i]];
+			for (let j in pack) {
 				if (typeof func == "function" && func(j)) {
 					continue;
 				}
@@ -1688,7 +1693,7 @@ export class Get extends GetCompatible {
 				}
 			}
 		}
-		for (i in libCharacter) {
+		for (let i in libCharacter) {
 			if (lib.filter.characterDisabled(i, libCharacter)) {
 				continue;
 			}
@@ -6253,7 +6258,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		game.expandSkills(skills1);
 		var zerotarget = false,
 			zeroplayer = false;
-		for (var i = 0; i < skills1.length; i++) {
+		for (let i = 0; i < skills1.length; i++) {
 			const info = get.info(skills1[i]);
 			if (!info) {
 				throw new Error(`${skills1[i]}不存在的技能`);
@@ -6289,7 +6294,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		if (target) {
 			var skills2 = target.getSkills().concat(lib.skill.global);
 			game.expandSkills(skills2);
-			for (var i = 0; i < skills2.length; i++) {
+			for (let i = 0; i < skills2.length; i++) {
 				const info = get.info(skills2[i]);
 				if (!info) {
 					throw new Error(`${skills2[i]}不存在的技能`);
@@ -6411,6 +6416,9 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		} else {
 			result2 += temp02;
 			result1 += temp01;
+			if (typeof card === "object" && !get.info(card)?.notarget) {
+				console.warn("计算get.effect_use(", target, card, player, player2, isLink, ")时缺少target参数");
+			}
 		}
 		if (zeroplayer) {
 			result1 = 0;
@@ -6424,7 +6432,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		} else {
 			final = result1 * cache.get.attitude(player, player) + (target ? result2 * cache.get.attitude(player, target) : 0);
 		}
-		if (!isLink && get.tag(card, "natureDamage") && !zerotarget) {
+		if (!isLink && target && !zerotarget && get.tag(card, "natureDamage")) {
 			var info = get.info(card);
 			if (!info || !info.ai || !info.ai.canLink) {
 				if (target.isLinked()) {
@@ -6638,6 +6646,9 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		} else {
 			result2 += temp02;
 			result1 += temp01;
+			if (typeof card === "object" && !get.info(card)?.notarget) {
+				console.warn("计算get.effect(", target, card, player, player2, isLink, ")时缺少target参数");
+			}
 		}
 		if (zeroplayer) {
 			result1 = 0;
@@ -6651,7 +6662,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		} else {
 			final = result1 * cache.get.attitude(player, player) + (target ? result2 * cache.get.attitude(player, target) : 0);
 		}
-		if (!isLink && get.tag(card, "natureDamage") && !zerotarget) {
+		if (!isLink && target && !zerotarget && get.tag(card, "natureDamage")) {
 			var info = get.info(card);
 			if (!info || !info.ai || !info.ai.canLink) {
 				if (target.isLinked()) {
