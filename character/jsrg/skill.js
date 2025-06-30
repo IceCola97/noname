@@ -2549,7 +2549,8 @@ const skills = {
 			const evt = event.getParent("phase", true);
 			if (evt) {
 				game.log(player, "结束了回合");
-				evt.finish();
+				evt.num = evt.phaseList.length;
+				evt.goto(11);
 			}
 			const evtx = event.getParent("phaseUse", true);
 			if (evtx) {
@@ -7134,15 +7135,7 @@ const skills = {
 			result: {
 				target(player, target) {
 					var eff = get.effect(target, { name: "sha", nature: "fire" }, player, target) / 30;
-					if (
-						!target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						)
-					) {
+					if (!target.mayHaveShan(player, "use")) {
 						eff *= 2;
 					}
 					var del = target.countCards("h") - player.countCards("h") + 1.5;
@@ -10535,16 +10528,7 @@ const skills = {
 					}
 					return Math.random();
 				})
-				.set(
-					"all",
-					!target.mayHaveShan(
-						player,
-						"use",
-						target.getCards("h", i => {
-							return i.hasGaintag("sha_notshan");
-						})
-					) && Math.random() < 0.75
-				)
+				.set("all", !target.mayHaveShan(player, "use") && Math.random() < 0.75)
 				.set("forceAuto", true)
 				.forResult();
 		},
@@ -11764,7 +11748,7 @@ const skills = {
 						return 0;
 					}
 					let eff = get.effect(target, { name: "sha", nature: "thunder", isCard: true }, player, player);
-					if (!ui.selected.targets.length && target.mayHaveShan(player, null, null, "odds") > 0.5) {
+					if (!ui.selected.targets.length && !target.mayHaveShan(player, "use")) {
 						eff *= 2;
 					}
 					return eff;
@@ -12654,6 +12638,15 @@ const skills = {
 	jsrgdangyi: {
 		init(player, skill) {
 			player.setMark(skill, player.getDamagedHp() + 1, false);
+			game.broadcastAll(
+				function (player) {
+					if (!player.node.jiu_dangyi) {
+    					player.node.jiu_dangyi = ui.create.div(".playerjiu", player.node.avatar);
+    					player.node.jiu_dangyi2 = ui.create.div(".playerjiu", player.node.avatar2);
+					}
+				},
+				player
+			);
 		},
 		zhuSkill: true,
 		trigger: {
@@ -12676,6 +12669,18 @@ const skills = {
 			player.addSkill(event.name + "_used");
 			player.addMark(event.name + "_used", 1, false);
 			trigger.num++;
+			game.broadcastAll(
+				function (player, name) {
+    				if (player.countMark(name + "_used") >= player.countMark(name) && player.node.jiu_dangyi) {
+    					player.node.jiu_dangyi.delete();
+    					player.node.jiu_dangyi2.delete();
+    					delete player.node.jiu_dangyi;
+    					delete player.node.jiu_dangyi2;
+    				}
+				},
+				player,
+				event.name
+			);
 		},
 		audio: 2,
 		mark: true,
@@ -12684,7 +12689,20 @@ const skills = {
 				return `剩余可发动次数为${player.countMark("jsrgdangyi") - player.countMark("jsrgdangyi_used")}`;
 			},
 		},
-		onremove: true,
+		onremove(player, skill) {
+			delete player.storage[skill];
+			game.broadcastAll(
+				function (player) {
+    				if (player.node.jiu_dangyi) {
+    					player.node.jiu_dangyi.delete();
+    					player.node.jiu_dangyi2.delete();
+    					delete player.node.jiu_dangyi;
+    					delete player.node.jiu_dangyi2;
+    				}
+				},
+				player
+			);
+		},
 		subSkill: {
 			used: {
 				charlotte: true,

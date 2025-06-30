@@ -1,4 +1,10 @@
 const characters = {
+	mb_zerong: {
+		sex: "male",
+		hp: 4,
+		group: "qun",
+		skills: ["mbfutu", "mbjingtu", "mbjiebian"],
+	},
 	pot_lusu: {
 		sex: "male",
 		hp: 3,
@@ -119,7 +125,6 @@ const characters = {
 		hp: 3,
 		skills: ["mbxiezheng", "mbqiantun", "mbweisi", "mbzhaoxiong"],
 		names: "司马|昭",
-		img: "image/character/jsrg_simazhao.jpg",
 		dieAudios: ["jsrg_simazhao"],
 		groupBorder: "jin",
 	},

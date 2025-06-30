@@ -1,4 +1,10 @@
 const characters = {
+	zhangqiying: {
+		sex: "female",
+		group: "qun",
+		hp: 3,
+		skills: ["xinfu_falu", "xinfu_dianhua", "xinfu_zhenyi"],
+	},
 	ol_qiaoxuan: {
 		sex: "male",
 		group: "qun",
@@ -803,7 +809,6 @@ const characters = {
 		hp: 3,
 		skills: ["weicheng", "daoshu"],
 	},
-
 	caoying: {
 		sex: "female",
 		group: "wei",
@@ -821,9 +826,8 @@ const characters = {
 		sex: "female",
 		group: "shu",
 		hp: 4,
-		skills: ["olwuniang", "olxushen"],
+		skills: ["newwuniang", "newzhennan", "newxushen"],
 	},
-
 	yangxiu: {
 		sex: "male",
 		group: "wei",

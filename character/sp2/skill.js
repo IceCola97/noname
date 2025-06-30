@@ -7,7 +7,7 @@ const skills = {
 		audio: 2,
 		trigger: { target: "useCardToTargeted" },
 		filter(event, player) {
-			return event.player != player && event.player.getStorage("starduhai_debuff").length < 4;
+			return event.player != player && event.player.isIn() && event.player.getStorage("starduhai_debuff").length < 4;
 		},
 		logTarget: "player",
 		async cost(event, trigger, player) {
@@ -256,7 +256,7 @@ const skills = {
 			},
 		},
 	},
-	starwenming: {
+	starweiming: {
 		audio: 2,
 		trigger: { global: "useCard" },
 		filter(event, player) {
@@ -2278,7 +2278,7 @@ const skills = {
 			if (result.bool) {
 				target.line(player);
 				player.logSkill("starhaoshou");
-				player.recover();
+				player.recover(target);
 			}
 		},
 		//global:'starhaoshou_global',
@@ -2645,7 +2645,9 @@ const skills = {
 				if (event.filterCard(get.autoViewAs({ name: "wuxie" }, "unsure"), player, event)) {
 					list.push(["锦囊", "", "wuxie"]);
 				}
-				return ui.create.dialog("砺锋", [list, "vcard"]);
+				const dialog = ui.create.dialog("砺锋", [list, "vcard"]);
+				dialog.direct = true;
+				return dialog;
 			},
 			check(button) {
 				var player = _status.event.player;
@@ -8699,13 +8701,7 @@ const skills = {
 						return Math.sqrt(target.countCards("he"));
 					}
 					if (
-						target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						) &&
+						target.mayHaveShan(player, "use") &&
 						player.countCards("hs", function (card) {
 							return !ui.selected.cards.includes(card) && get.name(card) == "sha" && player.canUse(card, target) && get.effect(target, card, player, player) != 0;
 						})
@@ -9121,13 +9117,7 @@ const skills = {
 					get.attitude(player, target) >= 0 ||
 					!player.canUse(cards[0], target, false) ||
 					(!player.hasJudge("lebu") &&
-						target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						) &&
+						target.mayHaveShan(player, "use") &&
 						!player.hasSkillTag(
 							"directHit_ai",
 							true,

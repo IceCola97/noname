@@ -768,7 +768,7 @@ export default {
 			if (player == target) {
 				return false;
 			}
-			if (target.hasSkill("reqiangxi_off")) {
+			if (target.hasSkill("gz_qiangxi_off")) {
 				return false;
 			}
 			return player.inRange(target);
@@ -1583,7 +1583,6 @@ export default {
 				trigger: {
 					player: "shaMiss",
 				},
-				direct: true,
 				filter(event, player) {
 					return event.skill == "gz_longdan_sha";
 				},
@@ -1859,8 +1858,7 @@ export default {
 					return 2;
 				}
 
-				const cards = target.getCards("h", card => card.hasGaintag("sha_notshan"));
-				return target.mayHaveShan(player, "use", cards) ? 1 : 0;
+				return target.mayHaveShan(player, "use") ? 1 : 0;
 			}
 		},
 		logTarget: "targets",
@@ -1926,18 +1924,19 @@ export default {
 			} else {
 				choice = "draw_card";
 			}
-			const next = player.chooseDrawRecover("###" + get.prompt("xinkuanggu") + "###摸一张牌或回复1点体力");
+			const next = player.chooseDrawRecover("###" + get.prompt(event.skill) + "###摸一张牌或回复1点体力");
 			next.set("choice", choice);
 			next.set("ai", function () {
 				// @ts-expect-error 类型系统未来可期
 				return _status.event.getParent().choice;
 			});
-			next.setHiddenSkill("xinkuanggu");
+			next.set("logSkill", event.skill);
+			next.setHiddenSkill(event.skill);
 			const control = await next.forResultControl();
 			if (control == "cancel2") {
 				return;
 			}
-			event.result = { bool: true };
+			event.result = { bool: true, skill_popup: false };
 		},
 		async content(_event, _trigger, _player) {},
 	},
@@ -2509,7 +2508,7 @@ export default {
 				const aim = list[1 - list.indexOf(i)];
 				const {
 					result: { bool },
-				} = await i.chooseBool(get.prompt("fakehanzhan"), "获得" + get.translation(aim) + "装备区的一张牌").set(
+				} = await i.chooseBool(get.prompt("gz_hanzhan"), "获得" + get.translation(aim) + "装备区的一张牌").set(
 					"choice",
 					aim.hasCard(card => {
 						return get.value(card, aim) * get.attitude(i, aim) < 0;
@@ -2586,12 +2585,10 @@ export default {
 		audioname2: {
 			gz_lvlingqi: "wushuang_lvlingqi",
 		},
-		forced: true,
 		locked: true,
 		group: ["wushuang1", "wushuang2"],
 		preHidden: ["wushuang1", "wushuang2", "gz_wushuang"],
 		trigger: { player: "useCard1" },
-		direct: true,
 		filter(event, player) {
 			if (event.card.name != "juedou" || !event.card.isCard) {
 				return false;

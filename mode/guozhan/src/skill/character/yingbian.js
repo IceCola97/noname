@@ -246,7 +246,8 @@ export default {
 						let evt = trigger.getParent("phase");
 						if (evt && evt.player == player) {
 							game.log(player, "结束了回合");
-							evt.finish();
+							evt.num = evt.phaseList.length;
+							evt.goto(11);
 						}
 						break;
 					}
@@ -2942,7 +2943,12 @@ export default {
 				charlotte: true,
 				trigger: { player: ["hideCharacterBegin", "showCharacterEnd"] },
 				filter(event, player) {
-					return get.character(event[event.name == "hideCharacter" ? "toHide" : "toShow"], 3).includes("fakeweirong");
+					if (event.name == "hideCharacter") {
+						return get.character(event.toHide, 3).includes("fakeweirong");
+					}
+					return event.toShow?.some(name => {
+						return get.character(name, 3).includes("fakeweirong");
+					});
 				},
 				forced: true,
 				popup: false,

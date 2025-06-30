@@ -3401,9 +3401,6 @@ const skills = {
 		},
 		getTargets() {
 			return game.filterPlayer(current => {
-				if (get.mode() === "doudizhu") {
-					return current.getSeatNum() !== 3;
-				}
 				return !current.isZhu2();
 			});
 		},
@@ -3420,7 +3417,7 @@ const skills = {
 		async cost(event, trigger, player) {
 			const toSortPlayers = get.info(event.skill).getTargets();
 			toSortPlayers.sortBySeat(game.findPlayer2(current => current.getSeatNum() == 1, true));
-			const next = player.chooseToMove("榻谟：是否分配" + (get.mode() != "doudizhu" ? (game.hasPlayer(cur => cur.isZhu2()) ? "除主公外" : "") : "除三号位外") + "所有角色的座次？");
+			const next = player.chooseToMove("榻谟：是否分配" + (get.mode() != "doudizhu" ? (game.hasPlayer(cur => cur.isZhu2()) ? "除主公外" : "") : "") + "所有角色的座次？");
 			next.set("list", [["（以下排列的顺序即为发动技能后角色的座次顺序）", [toSortPlayers.map(i => `${i.getSeatNum()}|${i.name}`), lib.skill.tamo.$createButton]]]);
 			next.set("toSortPlayers", toSortPlayers.slice(0));
 			next.set("processAI", () => {
@@ -4754,19 +4751,7 @@ const skills = {
 					}
 				};
 				var hasRuanshizi = game.hasPlayer(function (target) {
-					return (
-						target != player &&
-						player.canUse("sha", target, null, true) &&
-						!target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						) &&
-						get.attitude(player, target) < 0 &&
-						get.effect(target, { name: "sha" }, player, player) > 0
-					);
+					return target != player && player.canUse("sha", target, null, true) && !target.mayHaveShan(player, "use") && get.attitude(player, target) < 0 && get.effect(target, { name: "sha" }, player, player) > 0;
 				});
 				for (var card of hs) {
 					var name = get.name(card);

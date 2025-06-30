@@ -188,6 +188,13 @@ const skills = {
 		async content(event, trigger, player) {
 			trigger.cancel();
 		},
+		mod: {
+			cardGiftable(card, player, target) {
+				if (player != target && get.type(card, null, false) != "equip") {
+					return false;
+				}
+			},
+		},
 		ai: {
 			effect: {
 				target(card, player, target) {
@@ -414,7 +421,7 @@ const skills = {
 		trigger: { player: "useCardToPlayer" },
 		filter(event, player) {
 			const card = event.card;
-			if (card.name != "sha") {
+			if (card.name != "sha" || !event.isFirstTarget) {
 				return false;
 			}
 			return game.hasPlayer(target => get.distance(target, event.target) == 1 && lib.filter.targetInRange(card, player, target) && lib.filter.targetEnabled2(card, player, target) && !event.targets.includes(target));
@@ -4932,7 +4939,7 @@ const skills = {
 					.forResult("bool");
 				if (bool) {
 					target.line(player);
-					await player.recover();
+					await player.recover(target);
 				}
 			}
 		},

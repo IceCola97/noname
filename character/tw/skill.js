@@ -2897,7 +2897,7 @@ const skills = {
 			if (event.name == "phaseZhunbei") {
 				return player.hasDisabledSlot();
 			}
-			return player.getStorage("twhuangzhu_effect").length;
+			return player.getStorage("twhuangzhu_effect").length && player.hasDisabledSlot();
 		},
 		async cost(event, trigger, player) {
 			if (trigger.name == "phaseZhunbei") {
@@ -2921,10 +2921,53 @@ const skills = {
 					cost_data: control,
 				};
 			} else {
-				const storag = player.getStorage("twhuangzhu_effect");
+				const storage = player.getStorage("twhuangzhu_effect");
+				const storage2 = player.getStorage("twhuangzhu_equip").slice().map(equip => equip[2]);
+				let virtualList = {};
+				let disabled = [1, 2, 3, 4, 5].filter(num => player.countDisabledSlot(num)).map(num => "equip" + num);
+				for (let i of disabled) {
+					virtualList[i] = [];
+				}
+				if (storage2?.length) {
+					for (let i of storage2) {
+						if (disabled.includes(get.subtype(i))) {
+							virtualList[get.subtype(i)].add(i);
+						}
+					}
+				}
+				let chooseList = [];
+				chooseList.push('###煌烛###<div class="text center">为至多两个已废除的装备栏选择或替换牌名</div>');
+				for (let i of disabled) {
+					let str = get.translation(i) + "栏：";
+					if (virtualList[i]?.length) {
+						str += "已视为装备" + get.translation(virtualList[i]);
+					} else {
+						str += "未视为装备任何牌";
+					}
+					chooseList.push(str);
+					let equips = storage.slice().filter(name => get.subtypes(name).includes(i));
+					let list = [equips, "vcard"]
+					if (equips.length) {
+						chooseList.push(list);
+					}
+				}
 				const {
 					result: { bool, links },
-				} = await player.chooseButton(['###煌烛：是否选择或替换至多两个牌名？###<div class="text center">你视为拥有选择牌名的技能</div>', [storag, "vcard"]], [1, 2]).set("ai", button => get.equipValue({ name: button.link[2] }, get.player()));
+				} = await player.chooseButton(chooseList, [1, 2])
+					.set("filterButton", button => {
+						let storage2 = get.event("storage2");
+						if (storage2.includes(button.link[2])) {
+							return false;
+						}
+						if (ui.selected.buttons.length) {
+							if (get.subtype(ui.selected.buttons[0].link[2]) == get.subtype(button.link[2])) {
+								return false;
+							}
+						}
+						return true;
+					})
+					.set("storage2", storage2)
+					.set("ai", button => get.equipValue({ name: button.link[2] }, get.player()));
 				event.result = {
 					bool: bool,
 					cost_data: links,
@@ -7759,13 +7802,7 @@ const skills = {
 					(function () {
 						var d1 = false;
 						if (
-							!target.mayHaveShan(
-								player,
-								"use",
-								target.getCards("h", i => {
-									return i.hasGaintag("sha_notshan");
-								})
-							) ||
+							!target.mayHaveShan(player, "use") ||
 							player.hasSkillTag(
 								"directHit_ai",
 								true,
@@ -11123,17 +11160,7 @@ const skills = {
 			expose: 0.2,
 			result: {
 				target(player, target) {
-					if (
-						target.countCards("h") <= target.hp &&
-						!target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						) &&
-						get.effect(target, { name: "sha", isCard: true }, player, player) > 0
-					) {
+					if (target.countCards("h") <= target.hp && !target.mayHaveShan(player, "use") && get.effect(target, { name: "sha", isCard: true }, player, player) > 0) {
 						return -1;
 					} else if (target.countCards("h") > target.hp && target.hp > 2 && target.hasShan()) {
 						return 1;
@@ -15752,13 +15779,7 @@ const skills = {
 					}
 					var num = 1;
 					if (
-						(!target.mayHaveShan(
-							player,
-							"use",
-							target.getCards("h", i => {
-								return i.hasGaintag("sha_notshan");
-							})
-						) ||
+						(!target.mayHaveShan(player, "use") ||
 							player.hasSkillTag(
 								"directHit_ai",
 								true,
@@ -17354,7 +17375,7 @@ const skills = {
 					}
 					player
 						.chooseCard("h", "除害：将其中一张得到的牌置入弃牌堆", true, function (card) {
-							return _status.event.cards.includes(card);
+							return _status.event.cards?.includes(card);
 						})
 						.set("ai", function (card) {
 							return -get.value(card);
@@ -20955,7 +20976,7 @@ const skills = {
 				choiceList[1] = '<span style="opacity:0.5">' + choiceList[1] + "</span>";
 			}
 			choices.push("cancel2");
-			const control = await player
+			const { result } = await player
 				.chooseControl(choices)
 				.set("choiceList", choiceList)
 				.set(
@@ -20966,12 +20987,11 @@ const skills = {
 						}
 						return 0;
 					})()
-				)
-				.forResultControl();
+				);
 			event.result = {
-				bool: control != "cancel2",
+				bool: result?.control !== "cancel2",
 				targets: [target],
-				cost_data: control,
+				cost_data: result?.control,
 			};
 		},
 		async content(event, trigger, player) {
@@ -20982,29 +21002,26 @@ const skills = {
 			if (cost_data == "选项一") {
 				await player.draw();
 			} else {
-				const links = await player.choosePlayerCard(target, "hej", true).forResultLinks();
-				if (links?.length) {
-					const card = links[0];
+				const { result } = await player.choosePlayerCard(target, "hej", true);
+				if (result?.links?.length) {
+					const card = result.links[0];
 					target.$throw(get.position(card) == "h" ? 1 : card, 1000);
 					await target.lose(card, ui.cardPile, "insert");
 				}
 			}
 			await game.delayx();
-			if (!target.isIn() || player.countCards("h") !== target.countCards("h")) {
+			if (player.countCards("h") !== target.countCards("h")) {
 				return;
 			}
-			let num = player.storage.counttrigger[event.name];
+			const num = player.storage.counttrigger?.[event.name];
 			if (typeof num == "number" && num > 0) {
-				num--;
+				player.storage.counttrigger[event.name]--;
 			}
-			const bool = await player
-				.chooseBool(`是否令${get.translation(trigger.card)}对自己无效？`)
-				.set("ai", () => {
-					const evt = _status.event.getTrigger();
-					return get.effect(evt.target, evt.card, evt.player, evt.target) < 0;
-				})
-				.forResultBool();
-			if (bool) {
+			const { result } = await player.chooseBool(`是否令${get.translation(trigger.card)}对自己无效？`).set("ai", () => {
+				const evt = _status.event.getTrigger();
+				return get.effect(evt.target, evt.card, evt.player, evt.target) < 0;
+			});
+			if (result?.bool) {
 				trigger.excluded.add(player);
 			}
 		},
@@ -21466,13 +21483,7 @@ const skills = {
 								}
 								for (var target of trigger.targets) {
 									if (
-										!target.mayHaveShan(
-											player,
-											"use",
-											target.getCards("h", i => {
-												return i.hasGaintag("sha_notshan");
-											})
-										) ||
+										!target.mayHaveShan(player, "use") ||
 										trigger.player.hasSkillTag(
 											"directHit_ai",
 											true,
@@ -24238,14 +24249,7 @@ const skills = {
 				) {
 					continue;
 				}
-				const hitOdds =
-					1 -
-					tar.mayHaveShan(
-						player,
-						"use",
-						tar.getCards("h", i => i.hasGaintag("sha_notshan")),
-						"odds"
-					);
+				const hitOdds = 1 - tar.mayHaveShan(player, "use", true, "odds");
 				if (
 					hitOdds >= 1 ||
 					event.player.hasSkillTag(
