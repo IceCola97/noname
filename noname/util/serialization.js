@@ -24,6 +24,10 @@ const TYPE_KEY = "a60e024487f63a67c634d782aaaf1127";
 const decompileFunction = security.isSandboxRequired() ? security.importSandbox().Marshal.decompileFunction : Function.prototype.call.bind(Function.prototype.toString);
 
 export default class Serialization {
+	/** @type {number[]|null} */
+	static #collectedCachedIds = null;
+	/** @type {Player[]|null} */
+	static #currentSerliazationTargets = null;
 	/**
 	 * 序列化卡牌信息
 	 * 
@@ -160,7 +164,15 @@ export default class Serialization {
 			if (/\{\s*\[native code\]\s*\}\s*$/.test(str)) {
 				return "_noname_func:function () {}";
 			}
-			return "_noname_func:" + FuncTools.cleanFuncStr(str);
+			const info = FuncTools.getCachingFunctionInfo(func);
+			if (Serialization.#currentSerliazationTargets && info?.isCached(Serialization.#currentSerliazationTargets)) {
+				return `_noname_func:CACHED#${info.id}`;
+			}
+			let cleaned = FuncTools.cleanFuncStr(str);
+			if (info) {
+				cleaned = FuncTools.injectCachingId(cleaned, info.id);
+			}
+			return "_noname_func:" + cleaned;
 		}
 		return "_noname_func:function () {}";
 	}
@@ -171,11 +183,32 @@ export default class Serialization {
 	 * @returns {Function}
 	 */
 	static deserializeFunction(info) {
-		if ("sandbox" in window) {
-			console.log("[deserializeFunction] info:", info);
+		info = info.slice(13);
+
+		if (info.startsWith("CACHED#")) {
+			const id = info.slice(7);
+
+			if (/^\d+$/.test(id)) {
+				return FuncTools.getCachedFunction(Number(id)) ?? function () {};
+			}
+
+			console.warn("无法识别的缓存函数ID: " + id);
+			return function () {};
 		}
 
-		const str = FuncTools.cleanFuncStr(info.slice(13), true); // 清洗函数并阻止注入
+        if (Serialization.#collectedCachedIds) {
+            const injectedId = FuncTools.takeCachingId(info);
+
+            if (injectedId) {
+                Serialization.#collectedCachedIds.add(injectedId);
+            }
+        }
+
+		if ("sandbox" in window) {
+			console.log("[deserializeFunction] raw:", info);
+		}
+
+		const str = FuncTools.cleanFuncStr(info, true); // 清洗函数并阻止注入
 		if ("sandbox" in window) {
 			console.log("[deserializeFunction] cleaned:", str);
 		}
@@ -559,6 +592,52 @@ export default class Serialization {
 			return result;
 		} else {
 			return item;
+		}
+	}
+	/**
+	 * 序列化为向特定玩家发送的数据
+	 * 这个函数只有主机使用才有意义喵
+     * 此函数用于支持函数缓存功能喵，需要指定序列化数据发送的目标才能生效喵
+	 * 
+	 * @param {any} item 好麻烦喵不写了喵
+	 * @param {Player|Player[]} targets
+	 */
+	static serializeTo(item, targets) {
+		if (Serialization.#currentSerliazationTargets) {
+			throw new Error("函数serializeTo不能递归调用");
+		}
+		if (targets instanceof Player) {
+			Serialization.#currentSerliazationTargets = [targets];
+		} else if (get.itemtype(targets) === "players") {
+			Serialization.#currentSerliazationTargets = targets;
+		}
+
+		try {
+			return Serialization.serialize(item);
+		} finally {
+			Serialization.#currentSerliazationTargets = null;
+		}
+	}
+	/**
+	 * 反序列化主机发送过来的数据喵
+     * 使用此方法将会支持函数缓存，但需要手动收集缓存的函数ID向主机报告喵
+	 * 
+	 * @param {any} item 
+	 * @param {number[]|null} collecteds
+	 */
+	static deserializeFrom(item, collecteds) { 
+		if (Serialization.#collectedCachedIds) {
+			throw new Error("函数deserializeFrom不能递归调用");
+		}
+
+		if (Array.isArray(collecteds)) {
+			Serialization.#collectedCachedIds = collecteds;
+		}
+
+		try { 
+			return Serialization.deserialize(item);
+		} finally { 
+			Serialization.#collectedCachedIds = null;
 		}
 	}
 }

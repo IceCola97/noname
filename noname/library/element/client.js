@@ -4,6 +4,7 @@ import { lib } from "../index.js";
 import { _status } from "../../status/index.js";
 import { ui } from "../../ui/index.js";
 import security from "../../util/security.js";
+import Serialization from "../../util/serialization.js";
 
 export class Client {
 	/**
@@ -42,12 +43,15 @@ export class Client {
 		if (this.closed) {
 			return this;
 		}
-		var args = Array.from(arguments);
+		const args = Array.from(arguments);
 		if (typeof args[0] == "function") {
 			args.unshift("exec");
 		}
-		for (var i = 1; i < args.length; i++) {
-			args[i] = get.stringifiedResult(args[i]);
+		const player = lib.playerOL[this.id];
+		for (let i = 1; i < args.length; i++) {
+			// TODO: 其实对于多个玩家同时发送应该统一序列化来节省开销喵，不过暂时就不继续改了喵
+			// 因为本次commit的任务只是为函数缓存提供支持哦喵
+			args[i] = Serialization.serializeTo(args[i], player);
 		}
 		try {
 			this.ws.send(JSON.stringify(args));

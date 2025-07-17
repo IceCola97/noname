@@ -9,6 +9,7 @@ import { ChildNodesWatcher } from "../cache/childNodesWatcher.js";
 import security from "../../util/security.js";
 import { ContentCompiler } from "./gameEvent.js";
 import dedent from "../../../game/dedent.js";
+import FuncTools from "../../util/functools.js";
 
 export class Player extends HTMLDivElement {
 	/**
@@ -693,7 +694,7 @@ export class Player extends HTMLDivElement {
 					}
 				`;
 
-				if (!get.isFunctionBody(body)) {
+				if (!FuncTools.isFunctionBody(body)) {
 					throw new Error(`无效的函数体: ${body}`);
 				}
 
@@ -721,7 +722,7 @@ export class Player extends HTMLDivElement {
 					const begin = a.indexOf("{") == a.indexOf("}") && a.indexOf("{") == -1 && a.indexOf("=>") > -1 ? a.indexOf("=>") + 2 : a.indexOf("{") + 1;
 					const str2 = a.slice(begin, a.lastIndexOf("}") != -1 ? a.lastIndexOf("}") : undefined).trim();
 					// 防止注入喵
-					if (!get.isFunctionBody(str2)) {
+					if (!FuncTools.isFunctionBody(str2)) {
 						throw new Error("无效的content函数代码");
 					}
 					let recompiledScope;

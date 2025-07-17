@@ -30,6 +30,8 @@ import { Concurrent } from "./concurrent/index.js";
 
 import { defaultSplashs } from "../init/onload/index.js";
 import dedent from "../../game/dedent.js";
+import Serialization from "../util/serialization.js";
+import FuncTools from "../util/functools.js";
 
 const html = dedent;
 
@@ -10558,23 +10560,29 @@ export class Library {
 					this.send("heartbeat");
 					return;
 				}
-				var message;
+				let message;
 				try {
 					message = JSON.parse(messageevent.data);
 					if (!Array.isArray(message) || typeof lib.message.client[message[0]] !== "function") {
-						throw "err";
+						throw new Error("无效的客机指令: " + message[0]);
 					}
 					if (game.sandbox) {
 						security.enterSandbox(game.sandbox);
 					}
+					const collecteds = [];
 					try {
 						for (var i = 1; i < message.length; i++) {
-							message[i] = get.parsedResult(message[i]);
+							message[i] = Serialization.deserializeFrom(message[i], collecteds);
 						}
 					} finally {
 						if (game.sandbox) {
 							security.exitSandbox();
 						}
+					}
+					// 我们将序列化中已经缓存的函数报告给主机喵
+					// 这样下次发送相同的函数就可以节省带宽喵
+					if (collecteds.length) {
+						game.send("reportCached", collecteds);
 					}
 				} catch (e) {
 					console.log(e);
@@ -14042,6 +14050,26 @@ export class Library {
 				}
 				this.send("log", items);
 			},
+			/**
+			 * 主机命令 报告缓存项
+			 * 客机通过此命令告诉主机给定的函数已经被缓存喵
+			 * 下一次可以使用缓存格式发送函数以节省带宽喵
+			 * 
+			 * @this {import("./element/client.js").Client}
+			 */
+			reportCached(collecteds) {
+				const player = lib.playerOL[this.id];
+				
+				if (player && Array.isArray(collecteds)) {
+					for (const id of collecteds) {
+						const info = FuncTools.getCachingFunctionInfo(Number(id));
+
+						if (info) {
+							info.addCachedPlayer(player);
+						}
+					}
+				}
+			}
 		},
 		client: {
 			log: function (arr) {

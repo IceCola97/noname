@@ -1,5 +1,113 @@
+import { Player } from "../library/element/player.js";
 import { GeneratorFunction, AsyncFunction, AsyncGeneratorFunction } from "../util/index.js";
 import security from "../util/security.js";
+
+/**
+ * @typedef {{
+ *     id: number;
+ *     source: Function;
+ *     isCached(players: Player | Player[]): boolean;
+ *     addCachedPlayer(player: Player): void;
+ *     removeCachedPlayer(player: Player): void;
+ * }} CachingInfo
+ */
+
+/** @type {{ [id: number]: WeakRef<CachingInfo> }} */
+const cachingIdFunctionMap = {};
+/** @type {WeakMap<Function, CachingInfo>} */
+const markedCachingFunctions = new WeakMap();
+/** @type {WeakMap<Player, WeakSet<CachingInfo>>} */
+const playerCachingMap = new WeakMap();
+/** @type {number} */
+let nextCachingId = Math.trunc(Math.random() * 10000);
+
+/** @type {{ [id: number]: Function }} */
+const cachedFunctions = {};
+
+/**
+ * 判断当前函数是否对特定玩家缓存过
+ * 
+ * @this CachingInfo
+ * @param {Player|Player[]} players 
+ * @returns {boolean}
+ */
+function isCached(players) {
+	if (players instanceof Player) {
+		return !!playerCachingMap.get(players)?.has(this);
+	} else if (Array.isArray(players)) {
+		for (const player of players) {
+			if (!playerCachingMap.get(player)?.has(this)) {
+				return false;
+			}
+		}
+		return true;
+	} else {
+		throw new Error("参数 players 不是玩家或玩家数组");
+	}
+}
+
+/**
+ * 标记特定玩家已经缓存过当前函数
+ * 
+ * @this CachingInfo
+ * @param {Player} player 
+ */
+function addCachedPlayer(player) {
+	if (!(player instanceof Player)) {
+		throw new Error("参数 player 不是玩家");
+	}
+
+	let cached = playerCachingMap.get(player);
+
+	if (!cached) {
+		cached = new WeakSet();
+		playerCachingMap.set(player, cached);
+	}
+
+	cached.add(this);
+}
+
+/**
+ * 取消标记特定玩家已经缓存过当前函数
+ * 
+ * @this CachingInfo
+ * @param {Player} player 
+ */
+function removeCachedPlayer(player) {
+	if (!(player instanceof Player)) {
+		throw new Error("参数 player 不是玩家");
+	}
+
+	playerCachingMap.get(player)?.delete(this);
+}
+
+/**
+ * 为当前函数创建缓存信息对象
+ * 
+ * @param {Function} func 
+ * @returns {CachingInfo}
+ */
+function createCachingInfo(func) {
+	if (typeof func !== "function") {
+		throw new Error("参数 func 不是函数");
+	}
+
+	const nextId = nextCachingId;
+
+	if (nextId >= Number.MAX_SAFE_INTEGER) {
+		throw new Error("缓存ID已经分配到极限喵");
+	}
+
+	nextCachingId++;
+
+	const info = Object.create(null);
+	info.id = nextId;
+	info.source = func;
+	info.isCached = isCached;
+	info.addCachedPlayer = addCachedPlayer;
+	info.removeCachedPlayer = removeCachedPlayer;
+	return Object.freeze(info);
+}
 
 export default class FuncTools {
 	/** @type {RegExp} */
@@ -274,5 +382,70 @@ export default class FuncTools {
 		}
 
 		return null;
+	}
+	/**
+	 * 如果函数被标记为可缓存函数，返回此函数缓存的管理对象，否则返回null
+	 * 
+	 * @param {Function|number} func 
+	 * @returns {CachingInfo|null}
+	 */
+	static getCachingFunctionInfo(func) {
+		if (typeof func == "number") {
+			return cachingIdFunctionMap[func]?.deref() || null;
+		} else if (typeof func == "function") {
+			return markedCachingFunctions.get(func) || null;
+		} else {
+			throw new TypeError("参数 func 必须是function或者number");
+		}
+	}
+	/**
+	 * 标记函数为可缓存函数并为其分配缓存ID
+	 * 
+	 * @param {Function} func 
+	 */
+	static markAsCachingFunction(func) {
+		const info = createCachingInfo(func);
+		cachingIdFunctionMap[info.id] = new WeakRef(info);
+		markedCachingFunctions.set(func, info);
+	}
+    /**
+     * 清除一个玩家的所有缓存记录项
+     * 
+     * @param {Player} player 
+     */
+    static clearCachingFunctions(player) {
+        playerCachingMap.delete(player);
+	}
+	/**
+	 * 缓存函数并绑定对应ID
+	 * 
+	 * @param {number} id 
+	 * @param {Function} func 
+	 * @returns {boolean}
+	 */
+	static cacheFunction(id, func) { 
+		if (typeof id !== "number") {
+			throw new TypeError("参数 id 必须为数字");
+		}
+		if (typeof func !== "function") {
+			throw new TypeError("参数 func 必须为函数");
+		}
+		if (id in cachedFunctions) {
+			return false;
+		}
+		cachedFunctions[id] = func;
+		return true;
+	}
+	/**
+	 * 通过缓存ID获取缓存的函数
+	 * 
+	 * @param {number} id
+	 * @returns {Function|null}
+	 */
+	static getCachedFunction(id) { 
+		if (typeof id !== "number") {
+			throw new TypeError("参数 id 必须为数字");
+		}
+		return cachedFunctions[id] || null;
 	}
 }

@@ -9,6 +9,7 @@ import { rootURL } from "../../../noname.js";
 
 import security from "../../util/security.js";
 import { ContentCompiler } from "../element/gameEvent.js";
+import FuncTools from "../../util/functools.js";
 
 export class LibInit {
 	/**
@@ -141,13 +142,12 @@ export class LibInit {
 			document.querySelector("#server_count").innerHTML = lib.node.clients.length;
 		}
 		ws.on("message", function (messagestr) {
-			var message;
+			let message;
 			try {
 				message = JSON.parse(messagestr);
 				if (!Array.isArray(message) || typeof lib.message.server[message[0]] !== "function") {
-					throw "err";
+					throw new Error("无效的主机指令: " + message[0]);
 				}
-				// @ts-expect-error ignore
 				if (client.sandbox) {
 					security.enterSandbox(client.sandbox);
 				}
@@ -156,7 +156,6 @@ export class LibInit {
 						message[i] = get.parsedResult(message[i]);
 					}
 				} finally {
-					// @ts-expect-error ignore
 					if (client.sandbox) {
 						security.exitSandbox();
 					}
@@ -169,6 +168,14 @@ export class LibInit {
 			lib.message.server[message.shift()].apply(client, message);
 		});
 		ws.on("close", function () {
+			const player = lib.playerOL[client.id];
+
+			if (player) {
+				// 当玩家断开连接时我们应该删除其所有缓存记录项喵
+				// 确保重新连接之后可以正常工作喵
+				FuncTools.clearCachingFunctions(player);
+			}
+
 			client.close();
 		});
 		client.send("opened");
