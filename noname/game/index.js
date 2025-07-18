@@ -25,6 +25,7 @@ import { Check } from "./check.js";
 import security from "../util/security.js";
 import { GameCompatible } from "./compatible.js";
 import { save } from "../util/config.js";
+import { GameEvent, Player } from "../library/element/index.js";
 
 export class Game extends GameCompatible {
 	documentZoom;
@@ -1820,6 +1821,48 @@ export class Game extends GameCompatible {
 		}
 		if (typeof func == "function") {
 			func.apply(this, args);
+		}
+	}
+	/**
+	 * 向特定玩家所在客机创建远程事件并等待返回结果
+	 * 此函数同样兼容本地玩家与AI玩家喵
+	 * 
+	 * @param {Player} target 要执行事件的玩家
+	 * @param {ContentFuncByAll} content 事件的content，目前只支持async喵，此content用和cost相同的方式指定result喵
+	 * @param {{ [key: string]: any }} closure 捕获的闭包变量喵（此处捕获的变量允许你在content里面使用闭包访问喵）
+	 * @param {"ai"|Result|(() => ("ai"|Result))} [aiResult="ai"] 当远程事件content返回的结果是"ai"或玩家托管、掉线时使用此结果喵，如果是函数将使用函数返回结果哦
+	 * @param {{ [key: string]: any }|null} [options=null] 额外的配置项，暂时还没想好喵
+	 */
+	async createRemoteEvent(target, content, closure, aiResult, options) {
+		if (!aiResult) {
+			aiResult = () => "ai";
+		} else if (typeof aiResult !== "function") {
+			// @ts-expect-error aiResult在这里不是函数喵
+			aiResult = () => aiResult;
+		}
+
+		let result;
+		
+		if (target.isMine()) {
+			// 如果玩家是主机屏幕外正在控制的那个还没有托管喵
+			// 我们在本地创建事件喵
+			const next = game.createEvent("remoteEvent", false);
+			// @ts-expect-error result可以是"ai"喵
+			next.switchToAuto = () => { next.result = "ai"; }
+			next.setContent(content);
+			result = await next.forResult();
+		} else if (target.isOnline()) {
+			// 如果玩家是客机正在控制的某个玩家还没有托管喵
+			// 啊这里还没有写完喵
+			target.send(remoteExec, closure);
+		} else {
+			// 否则就是AI玩家哦喵
+			result = "ai";
+		}
+
+		if (result === "ai") {
+			// @ts-expect-error aiResult在这里是函数喵
+			result = aiResult();
 		}
 	}
 	syncState() {

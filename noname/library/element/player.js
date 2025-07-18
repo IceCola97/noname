@@ -3705,6 +3705,14 @@ export class Player extends HTMLDivElement {
 		this.ws.send.apply(this.ws, arguments);
 		return this;
 	}
+	/**
+	 * 
+	 * @param {(keyof Library.)|Function} action 
+	 * @param  {...any} args 
+	 */
+	sendAsync(action, ...args) {
+
+	}
 	getId() {
 		if (_status.video || _status.connectMode) {
 			return this;
@@ -11649,6 +11657,9 @@ export class Player extends HTMLDivElement {
 			return this.side == me.side;
 		}
 		return false;
+	}
+	isMine() {
+		return this === game.me && !_status.auto && !this.isMad() && !game.notMe;
 	}
 	isOnline() {
 		if (this.ws && lib.node && !this.ws.closed && this.ws.inited && !this.isAuto) {
