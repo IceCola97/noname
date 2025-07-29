@@ -23424,6 +23424,1428 @@ const skills = {
 			result: { player: 1 },
 			threaten: 3.2,
 		},
+		FruitNinja: (() => {
+			/** @typedef {number|"bomb"|"easteregg1"} ItemType */
+			/** @typedef {"easy"|"normal"|"hard"|"inferno"|"eternal"} Diffculty */
+			const diffcultList = Object.freeze(["easy", "normal", "hard", "inferno", "eternal"]);
+			const gameWidth = 500;
+			const gameHeight = 360;
+			const minVelocityY = 20;
+			const maxVelocityY = 30;
+			const pending = new Promise(() => {});
+			const bombColors = {
+				bomb: "red",
+				easteregg1: "yellow",
+			};
+			const bombAnimations = {
+				bomb: [
+					{ type: "ray", duration: 1000, color: "white", },
+					{ type: "nuclear", duration: 300, color: "white", },
+				],
+				easteregg1: [
+					{ type: "nuclear", duration: 500, color: "white", },
+				],
+			};
+			const heartInfo = {
+				color: "red",
+				size: 25,
+				margin: 10,
+			};
+			const diffcultyInfo = {
+				easy: {
+					initialVelocityX: [0, 0],
+					initialVelocityY: [minVelocityY, maxVelocityY],
+					thorwInterval: [1000, 1500],
+					bombCountOfRound: 0,
+					maxRound: 2,
+					nextRoundInterval: -1,
+					cluster: false,
+					bombType: "bomb",
+					extraLife: 0,
+				},
+				normal: {
+					initialVelocityX: [0, 5],
+					initialVelocityY: [minVelocityY, maxVelocityY],
+					thorwInterval: [1000, 1500],
+					bombCountOfRound: [1, 2],
+					nextRoundInterval: -1,
+					maxRound: 2,
+					cluster: false,
+					bombType: "bomb",
+					extraLife: 4,
+				},
+				hard: {
+					initialVelocityX: [-2, 10],
+					initialVelocityY: [minVelocityY, maxVelocityY],
+					thorwInterval: [500, 700],
+					bombCountOfRound: [2, 3],
+					nextRoundInterval: 2000,
+					maxRound: [2, 3],
+					cluster: false,
+					bombType: "easteregg1",
+					extraLife: 1,
+				},
+				inferno: {
+					initialVelocityX: [-2, 10],
+					initialVelocityY: [minVelocityY, maxVelocityY],
+					thorwInterval: [300, 500],
+					bombCountOfRound: [3, 4],
+					nextRoundInterval: 1500,
+					maxRound: [2, 3],
+					cluster: true,
+					bombType: "easteregg1",
+					extraLife: 3,
+				},
+				eternal: {
+					initialVelocityX: [-5, 15],
+					initialVelocityY: [minVelocityY, maxVelocityY],
+					thorwInterval: [100, 200],
+					bombCountOfRound: [5, 7],
+					nextRoundInterval: 1000,
+					maxRound: [3, 5],
+					cluster: true,
+					bombType: "easteregg1",
+					extraLife: 3,
+				},
+			};
+
+			function randInt(a, b) {
+				return Math.floor(Math.random() * (b - a + 1) + a);
+			}
+
+			function randRange(range) {
+				if (typeof range === 'number') {
+					return range;
+				} else if (Array.isArray(range) && range.length === 2) {
+					return randInt(range[0], range[1]);
+				} else {
+					throw new TypeError("参数 range 必须是数字或者数字数组");
+				}
+			}
+
+			function randColor() {
+				// 其实使用hsl也可以喵
+				const rgb = [];
+				let amount = 384;
+
+				for (let i = 2; i--;) {
+					const value = randInt(0, Math.min(255, amount));
+					amount -= value;
+					rgb.push(value);
+				}
+
+				rgb.push(Math.min(255, amount));
+				rgb.randomSort();
+				return `#${rgb.map(v => v.toString(16).padStart(2, "0")).join("")}`;
+			}
+
+			function delay(ms) {
+				return new Promise(resolve => setTimeout(resolve, ms));
+			}
+
+			function getDefaultDiffculty() {
+				const now = new Date();
+
+				if (now.getMonth() === 0 && now.getDate() === 26) {
+					return now.getDay() === 0 ? "eternal" : "inferno";
+				} else if (now.getDay() === 0) {
+					return "hard";
+				} else {
+					/** @type {string} */
+					const nickname = get.connectNickname();
+					return nickname.endsWith("\u55b5") ? "easy" : "normal";
+				}
+			}
+
+			class FruitNinja {
+				/** @type {Diffculty} */
+				#diffcult;
+				/** @type {Card[]} */
+				#cards;
+				/**
+				 * @param {Card[]} cards 
+				 */
+				constructor(cards) {
+					this.#diffcult = getDefaultDiffculty();
+					this.#cards = cards;
+				}
+				/**
+				 * @param {HTMLCanvasElement} canvas 
+				 */
+				async *performGame(canvas) {
+					// 捕获this喵
+					const fruitGame = this;
+					// 画布上下文喵
+					const ctx = canvas.getContext("2d");
+					// 事件监听器撤销列表喵
+					const listeners = [];
+					// 指针分发队列喵
+					const pointerQueue = [];
+					// 指针帧路径跟踪列表喵
+					const pointerTracks = [[]];
+					// 当前屏幕上运行的图形对象喵
+					/** @type {Shape[]} */
+					const shapes = [];
+					// 当前屏幕上运行的粒子对象喵
+					/** @type {Particle[]} */
+					const particles = [];
+					// 玩家循环列表对象喵
+					const playerLooper = {
+						track: null,
+						physics: null,
+						render: null,
+					};
+					// 定义空气阻力喵
+					const airResistanceX = 0.01;
+					const airResistanceY = 0.05;
+					// 定义重力喵
+					const gravity = 0.5;
+					// 跟踪一定帧内的指针移动喵
+					const maxPointerTrack = 15;
+					// 当前难度的配置信息喵
+					const info = diffcultyInfo[fruitGame.#diffcult];
+					// 获取当前游戏字体喵
+					const fontFamily = getComputedStyle(document.body).fontFamily;
+					// 指针当前的移动向量喵
+					let pointerHits = null;
+					// 组件在游戏期间的持久化状态喵
+					let lastX = NaN, lastY = NaN;
+					let pressedId = null;
+					let onHitShape = null;
+					let onStageClear = null;
+					// 剩余轮数喵
+					let roundCount = randRange(info.maxRound);
+					// 剩余生命喵
+					let life = 1 + Math.max(0, Number(info.extraLife) || 0);
+					// 是否暂停以及唤醒队列喵
+					let pauseWorld = false;
+					const resumeQueue = [];
+					// 是否终止喵
+					let shutdown = false;
+					// 是否隐藏生命值
+					const hideOneHeart = life === 1;
+
+					// 创建一个节点作为颜色值解析器喵
+					const colorParser = ui.create.div();
+					colorParser.style.display = "none";
+					document.head.appendChild(colorParser);
+
+					function parseColor(color) { 
+						colorParser.style.color = color;
+						const parsed = getComputedStyle(colorParser).color;
+
+						const open = parsed.indexOf("(") + 1;
+						const close = parsed.indexOf(")");
+						const slots = parsed.substring(open, close).split(",");
+						const rgba = slots.map(Number);
+
+						if (rgba.length === 3) {
+							rgba.push(1);
+						}
+
+						return rgba;
+					}
+
+					function renderPointerPath(points, color = "black") {
+						if (points.length < 2) {
+							return;
+						}
+
+						let totalLength = 0;
+						const cumulativeLengths = [0];
+						
+						for (let i = 1; i < points.length; i++) {
+							const dx = points[i][0] - points[i - 1][0];
+							const dy = points[i][1] - points[i - 1][1];
+							totalLength += Math.sqrt(dx * dx + dy * dy);
+							cumulativeLengths.push(totalLength);
+						}
+
+						const widths = points.map((_, i) => 
+							totalLength > 0 ? 15 * (cumulativeLengths[i] / totalLength) : 0
+						);
+
+						const normals = [];
+						for (let i = 0; i < points.length; i++) {
+							if (i === 0 || i === points.length - 1) {
+								const index = i === 0 ? 0 : points.length - 2;
+								const p0 = points[index];
+								const p1 = points[index + 1];
+								const dx = p1[0] - p0[0];
+								const dy = p1[1] - p0[1];
+								const len = Math.sqrt(dx * dx + dy * dy);
+								normals[i] = len > 0 ? [-dy / len, dx / len] : [0, 0];
+							} else {
+								const prev = points[i - 1], curr = points[i], next = points[i + 1];
+								
+								const dx1 = curr[0] - prev[0];
+								const dy1 = curr[1] - prev[1];
+								const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+								const n1 = len1 > 0 ? [-dy1 / len1, dx1 / len1] : [0, 0];
+								
+								const dx2 = next[0] - curr[0];
+								const dy2 = next[1] - curr[1];
+								const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+								const n2 = len2 > 0 ? [-dy2 / len2, dx2 / len2] : [0, 0];
+								
+								const nx = n1[0] + n2[0];
+								const ny = n1[1] + n2[1];
+								const len = Math.sqrt(nx * nx + ny * ny);
+								normals[i] = len > 0 ? [nx / len, ny / len] : [0, 0];
+							}
+						}
+
+						for (let i = 0; i < points.length - 1; i++) {
+							const p0 = points[i];
+							const p1 = points[i + 1];
+							const w0 = widths[i];
+							const w1 = widths[i + 1];
+							const n0 = normals[i];
+							const n1 = normals[i + 1];
+
+							const A = [p0[0] + n0[0] * w0 / 2, p0[1] + n0[1] * w0 / 2];
+							const B = [p0[0] - n0[0] * w0 / 2, p0[1] - n0[1] * w0 / 2];
+							const C = [p1[0] - n1[0] * w1 / 2, p1[1] - n1[1] * w1 / 2];
+							const D = [p1[0] + n1[0] * w1 / 2, p1[1] + n1[1] * w1 / 2];
+
+							ctx.beginPath();
+							ctx.moveTo(A[0], A[1]);
+							ctx.lineTo(D[0], D[1]);
+							ctx.lineTo(C[0], C[1]);
+							ctx.lineTo(B[0], B[1]);
+							ctx.closePath();
+
+							ctx.fillStyle = color;
+							ctx.fill();
+						}
+
+						if (points.length >= 2) {
+							const lastIndex = points.length - 1;
+							const p0 = points[Math.max(lastIndex - 5, 0)];
+							const p1 = points[lastIndex];
+							const w1 = widths[lastIndex];
+							const n1 = normals[lastIndex];
+
+							let dx = p1[0] - p0[0];
+							let dy = p1[1] - p0[1];
+							const len = Math.sqrt(dx * dx + dy * dy);
+							if (len > 0) {
+								dx /= len;
+								dy /= len;
+							} else {
+								dx = n1[0];
+								dy = n1[1];
+							}
+
+							const triangleHeight = w1 * Math.sqrt(3) / 2;
+							const tipX = p1[0] + dx * triangleHeight;
+							const tipY = p1[1] + dy * triangleHeight;
+
+							const base1 = [p1[0] - n1[0] * w1 / 2, p1[1] - n1[1] * w1 / 2];
+							const base2 = [p1[0] + n1[0] * w1 / 2, p1[1] + n1[1] * w1 / 2];
+
+							ctx.beginPath();
+							ctx.moveTo(base1[0], base1[1]);
+							ctx.lineTo(tipX, tipY);
+							ctx.lineTo(base2[0], base2[1]);
+							ctx.closePath();
+
+							ctx.fillStyle = color;
+							ctx.fill();
+						}
+					}
+
+					function drawHeart(x, y, width, height, color) {
+						const originalWidth = 110;
+						const originalHeight = 95;
+						
+						const scaleX = width / originalWidth;
+						const scaleY = height / originalHeight;
+						
+						const startX = x - (75 - originalWidth / 2) * scaleX;
+						const startY = y - height * 0.25 - (40 - originalHeight / 2) * scaleY;
+						
+						const points = [
+							[75, 37, 70, 25, 50, 25],
+							[20, 25, 20, 62.5, 20, 62.5],
+							[20, 80, 40, 102, 75, 120],
+							[110, 102, 130, 80, 130, 62.5],
+							[130, 62.5, 130, 25, 100, 25],
+							[85, 25, 75, 37, 75, 40],
+						];
+						
+						ctx.beginPath();
+						ctx.moveTo(startX, startY);
+						
+						for (let i = 0; i < points.length; i++) {
+							const p = points[i];
+							ctx.bezierCurveTo(
+								startX + (p[0] - 75) * scaleX, 
+								startY + (p[1] - 40) * scaleY,
+								startX + (p[2] - 75) * scaleX, 
+								startY + (p[3] - 40) * scaleY,
+								startX + (p[4] - 75) * scaleX, 
+								startY + (p[5] - 40) * scaleY
+							);
+						}
+						
+						ctx.closePath();
+						ctx.fillStyle = color;
+						ctx.fill();
+					}
+
+					function getHeartPosition(index) {
+						if (index < 0) {
+							throw new RangeError("参数 index 必须大于等于 0");
+						}
+
+						const size = heartInfo.size;
+						const margin = heartInfo.margin;
+						const halfSize = size / 2;
+						return [ctx.canvas.width - index * (size + margin) - margin - halfSize, margin + halfSize];
+					}
+
+					function renderCurrentLife(hideOnOne) {
+						if (hideOnOne && life <= 1) {
+							return;
+						}
+
+						const color = heartInfo.color;
+						const size = heartInfo.size;
+
+						for (let i = life; i--;) {
+							const [x, y] = getHeartPosition(i);
+							drawHeart(x, y, size, size, color);
+						}
+					}
+
+					function pauseGame() {
+						pauseWorld = true;
+					}
+
+					function resumeGame() {
+						pauseWorld = false;
+
+						for (const resume of resumeQueue) {
+							resume();
+						}
+
+						resumeQueue.length = 0;
+					}
+
+					function waitForResume() {
+						if (!pauseWorld) {
+							return Promise.resolve();
+						}
+
+						return new Promise(resume => resumeQueue.push(resume));
+					}
+
+					function createCardShape(card, index) {
+						const fruitColor = get.info(card)?.fruitColor || randColor();
+						let fruitRadius = get.info(card)?.fruitRadius;
+
+						if (!Number.isFinite(fruitRadius) || fruitRadius < 20) {
+							fruitRadius = 20;
+						}
+
+						const circle = new Circle(index, fruitRadius, fruitColor);
+						return circle;
+					}
+
+					function createBombShape() {
+						const width = 30;
+						const height = 60;
+						const color = bombColors[info.bombType];
+						const bomb = new Rect(info.bombType, width, height, color);
+						return bomb;
+					}
+
+					function throwShape(shape) {
+						const bounds = shape.getBounds();
+						const halfWidth = (bounds[2] - bounds[0]) / 2;
+						const halfHeight = (bounds[3] - bounds[1]) / 2;
+						const halfGameWidth = gameWidth / 2;
+						const x = randInt(halfWidth, gameWidth - halfWidth);
+						const y = gameHeight + halfHeight;
+						const velX = randRange(info.initialVelocityX) * (x > halfGameWidth ? -1 : 1);
+						const velY = randRange(info.initialVelocityY) * -1;
+						shape.x = x;
+						shape.y = y;
+						shape.velX = velX;
+						shape.velY = velY;
+						shapes.push(shape);
+						game.playAudio("effect", "fruitninja_throw");
+					}
+
+					async function throwRoundItems() {
+						const bombCount = randRange(info.bombCountOfRound);
+						const items = fruitGame.#cards.map(createCardShape);
+						
+						if (bombCount > 0) {
+							for (let i = bombCount; i--;) {
+								items.push(createBombShape());
+							}
+						}
+
+						items.randomSort();
+
+						for (let i = items.length; i--;) {
+							const item = items[i];
+							throwShape(item);
+
+							if (i > 0 && typeof item.itemType !== "string" || !info.cluster) {
+								await delay(randRange(info.thorwInterval));
+							}
+
+							await waitForResume();
+						}
+					}
+					
+					/** @type {{ [key: string]: (shape: Shape, duration: number, color: string) => Promise<void> }} */
+					const animations = {
+						async ray(shape, duration, color) {
+							if (duration <= 0) {
+								return;
+							}
+
+							const now = new Date().getTime();
+							const interval = 300;
+
+							while (true) {
+								const time = new Date().getTime() - now;
+
+								if (time >= duration) {
+									break;
+								}
+
+								const remaining = duration - time;
+								await delay(Math.min(remaining, interval));
+
+								if (remaining <= interval) {
+									break;
+								}
+
+								particles.push(new Ray(shape.x, shape.y, color));
+							}
+						},
+						async nuclear(shape, duration, color) {
+							if (duration <= 0) {
+								return;
+							}
+
+							const left = shape.x;
+							const top = shape.y;
+							const right = ctx.canvas.width - shape.x;
+							const bottom = ctx.canvas.height - shape.y;
+							const maxX = Math.max(left, right);
+							const maxY = Math.max(top, bottom);
+							const maxRadius = Math.sqrt(maxX * maxX + maxY * maxY);
+
+							particles.push(new Nuclear(shape.x, shape.y, duration, maxRadius, color));
+							await delay(duration);
+						}
+					};
+
+					async function playAnimations(shape, data) {
+						for (const animData of data) {
+							const type = animData.type;
+
+							if (type in animations) {
+								const duration = animData.duration ?? 1000;
+								const color = animData.color || "white";
+								await animations[type](shape, duration, color);
+							}
+						}
+					}
+
+					function loseHeart() {
+						const heart = --life;
+						const [x, y] = getHeartPosition(heart);
+						explode(x, y, heartInfo.color);
+					}
+
+					async function onHitBomb(shape, [sx, sy, ex, ey]) {
+						pauseGame();
+
+						try {
+							const data = bombAnimations[shape.itemType];
+
+							if (data) {
+								await playAnimations(shape, data);
+							}
+
+							particles.push(new Curtain(500, false, "white"));
+							await delay(500);
+
+							pointerTracks.length = 1;
+							pointerTracks[0].length = 0;
+
+							particles.length = 0;
+
+							for (let i = shapes.length; i--;) {
+								shapes[i].destroy();
+							}
+
+							const curtain = new Curtain(500, true, "white");
+							particles.push(curtain);
+							await delay(500);
+
+							particles.remove(curtain);
+							loseHeart();
+						} finally {
+							resumeGame();
+						}
+					}
+
+					function explode(x, y, color) {
+						const count = randInt(10, 20);
+
+						for (let i = count; i--;) {
+							const bubble = new Bubble(x, y, randInt(2, 4), color);
+							bubble.randomEmit(randInt(3, 6));
+							particles.push(bubble);
+						}
+					}
+
+					class Shape {
+						x = 0;
+						y = 0;
+						velX = 0;
+						velY = 0;
+						rotation = 0;
+						rotVel = randInt(0, 1) == 0 ? -5 : 5;
+						color = "white";
+						text = "";
+						textSize = 16;
+						textMetrics;
+						textColor = "white";
+						outText = false;
+						/**
+						 * @type {ItemType}
+						 */
+						itemType;
+						constructor(itemType, color = "white", textSize = 16) {
+							this.itemType = itemType;
+							this.color = color;
+							this.text = typeof itemType == "string" ? "" : get.translation(fruitGame.#cards[itemType]).slice(0, 2);
+
+							this.textSize = textSize;
+							ctx.font = `${this.textSize}px ${fontFamily}`;
+							const textMetrics = ctx.measureText(this.text);
+							this.textMetrics = [textMetrics.width, textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent, textMetrics.fontBoundingBoxAscent];
+						}
+						destroy(reason) {
+							if (reason == "hit") {
+								this.onHit();
+							}
+
+							const index = shapes[shapes.length - 1] === this ? shapes.length - 1 : shapes.indexOf(this);
+
+							if (index >= 0) {
+								shapes.splice(index, 1);
+
+								if (shapes.length == 0) {
+									onStageClear?.();
+									onStageClear = null;
+								}
+							}
+						}
+						getBounds() {
+							return [0, 0, 0, 0];
+						}
+						tickPhysics() {
+							// 计算空气阻力喵
+							this.velX = this.velX * (1 - airResistanceX);
+							this.velY = this.velY * (1 - airResistanceY);
+							// 计算重力喵
+							this.velY += gravity;
+							// 应用速度喵
+							this.x += this.velX;
+							this.y += this.velY;
+							// 应用旋转喵
+							this.rotation += this.rotVel;
+						}
+						tickSuperPhysics() {
+						}
+						tickRender() {
+							if (this.text) {
+								const width = this.textMetrics[0];
+								const height = this.textMetrics[1];
+								const ascent = this.textMetrics[2];
+
+								ctx.font = `${this.textSize}px ${fontFamily}`;
+								ctx.fillStyle = this.textColor;
+								ctx.translate(this.x, this.y);
+								ctx.rotate(this.rotation * Math.PI / 180);
+								if (this.outText) {
+									const bounds = this.getBounds();
+									const boundsHeight = bounds[3] - bounds[1];
+									ctx.translate(-width / 2, boundsHeight / 2 + 5);
+								} else {
+									ctx.translate(-width / 2, -height / 2);
+								}
+								ctx.fillText(this.text, 0, ascent);
+								ctx.resetTransform();
+							}
+						}
+						hitTest(sx, sy, ex, ey) {
+							return false;
+						}
+						onHit() {
+							explode(this.x, this.y, this.color);
+						}
+					}
+
+					class Rect extends Shape {
+						#rotVel;
+						width;
+						height;
+						constructor(itemType, width, height, color = "white") {
+							super(itemType, color);
+							this.width = width;
+							this.height = height;
+						}
+						getBounds() {
+							const halfWidth = this.width / 2;
+							const halfHeight = this.height / 2;
+							const maxHalf = Math.max(halfWidth, halfHeight);
+							return [
+								this.x - maxHalf,
+								this.y - maxHalf,
+								this.x + maxHalf,
+								this.y + maxHalf,
+							];
+						}
+						tickRender() {
+							const halfWidth = this.width / 2;
+							const halfHeight = this.height / 2;
+
+							ctx.fillStyle = this.color;
+							ctx.translate(this.x, this.y);
+							ctx.rotate(-this.rotation * Math.PI / 180);
+							ctx.fillRect(-halfWidth, -halfHeight, this.width, this.height);
+							ctx.resetTransform();
+
+							super.tickRender();
+						}
+						hitTest(sx, sy, ex, ey) {
+							const cos = Math.cos(-this.rotation);
+							const sin = Math.sin(-this.rotation);
+
+							const tx1 = sx - this.x;
+							const ty1 = sy - this.y;
+							const tx2 = ex - this.x;
+							const ty2 = ey - this.y;
+
+							const x1 = tx1 * cos - ty1 * sin;
+							const y1 = tx1 * sin + ty1 * cos;
+							const x2 = tx2 * cos - ty2 * sin;
+							const y2 = tx2 * sin + ty2 * cos;
+
+							const halfW = this.width / 2;
+							const halfH = this.height / 2;
+							const rectLeft = -halfW;
+							const rectRight = halfW;
+							const rectTop = -halfH;
+							const rectBottom = halfH;
+
+							const pointInRect = (x, y) => 
+								x >= rectLeft && x <= rectRight
+								&& y >= rectTop && y <= rectBottom;
+
+							if (pointInRect(x1, y1) || pointInRect(x2, y2)) {
+								return true;
+							}
+
+							if ((x1 < rectLeft && x2 < rectLeft)
+								|| (x1 > rectRight && x2 > rectRight)
+								|| (y1 < rectTop && y2 < rectTop)
+								|| (y1 > rectBottom && y2 > rectBottom)) {
+								return false;
+							}
+
+							const intersectVertical = (xSeg1, ySeg1, xSeg2, ySeg2, edgeX, yMin, yMax) => {
+								if (xSeg1 === xSeg2) {
+									return false;
+								}
+								const t = (edgeX - xSeg1) / (xSeg2 - xSeg1);
+								if (t < 0 || t > 1) {
+									return false;
+								}
+								const y = ySeg1 + t * (ySeg2 - ySeg1);
+								return y >= yMin && y <= yMax;
+							};
+
+							const intersectHorizontal = (xSeg1, ySeg1, xSeg2, ySeg2, edgeY, xMin, xMax) => {
+								if (ySeg1 === ySeg2) {
+									return false;
+								}
+								const t = (edgeY - ySeg1) / (ySeg2 - ySeg1);
+								if (t < 0 || t > 1) {
+									return false;
+								}
+								const x = xSeg1 + t * (xSeg2 - xSeg1);
+								return x >= xMin && x <= xMax;
+							};
+
+							return (
+								intersectVertical(x1, y1, x2, y2, rectLeft, rectTop, rectBottom)
+								|| intersectVertical(x1, y1, x2, y2, rectRight, rectTop, rectBottom)
+								|| intersectHorizontal(x1, y1, x2, y2, rectTop, rectLeft, rectRight)
+								|| intersectHorizontal(x1, y1, x2, y2, rectBottom, rectLeft, rectRight)
+							);
+						}
+					}
+
+					class Circle extends Shape {
+						radius;
+						constructor(itemType, radius, color = "white") {
+							super(itemType, color);
+							this.radius = radius;
+							this.rotVel = 0;
+						}
+						getBounds() {
+							return [
+								this.x - this.radius,
+								this.y - this.radius,
+								this.x + this.radius,
+								this.y + this.radius,
+							];
+						}
+						tickRender() {
+							ctx.fillStyle = this.color;
+							ctx.beginPath();
+							ctx.ellipse(this.x, this.y, this.radius, this.radius, 0, 0, 2 * Math.PI);
+							ctx.fill();
+
+							super.tickRender();
+						}
+						hitTest(sx, sy, ex, ey) {
+							const dx = ex - sx;
+							const dy = ey - sy;
+							const lengthSquared = dx * dx + dy * dy;
+
+							const cx = this.x - sx;
+							const cy = this.y - sy;
+
+							let t = 0;
+							if (lengthSquared > 0) {
+								t = Math.max(0, Math.min(1, (cx * dx + cy * dy) / lengthSquared));
+							}
+
+							const closestX = sx + t * dx;
+							const closestY = sy + t * dy;
+
+							const distanceX = this.x - closestX;
+							const distanceY = this.y - closestY;
+							const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+							return distance <= this.radius;
+						}
+					}
+
+					class Particle {
+						x = 0;
+						y = 0;
+						life = 200;
+						velX = 0;
+						velY = 0;
+						airMode = "x";
+						gravity = true;
+						topMost = false;
+						constructor(x, y) {
+							this.x = x;
+							this.y = y;
+						}
+						emit(vx, vy) {
+							this.velX = vx;
+							this.velY = vy;
+						}
+						randomEmit(force) {
+							this.velX = force * Math.cos(Math.random() * Math.PI * 2);
+							this.velY = force * Math.sin(Math.random() * Math.PI * 2);
+						}
+						tickPhysics() {
+							// 计算空气阻力喵
+							let arX = 0, arY = 0;
+							switch (this.airMode) {
+								case "xy":
+									arX = airResistanceX;
+									arY = airResistanceY;
+									break;
+								case "x":
+									arX = airResistanceX;
+									arY = airResistanceX;
+									break;
+								case "y":
+									arX = airResistanceY;
+									arY = airResistanceY;
+									break;
+							}
+							if (arX >= 0 && arY >= 0) {
+								this.velX = this.velX * (1 - arX);
+								this.velY = this.velY * (1 - arY);
+							}
+							// 计算重力喵
+							if (gravity) {
+								this.velY += gravity;
+							}
+							// 应用速度到位置喵
+							this.x += this.velX;
+							this.y += this.velY;
+						}
+						tickSuperPhysics() {
+						}
+						tickRender() {
+						}
+					}
+
+					class Bubble extends Particle {
+						maxRadius;
+						color;
+						constructor(x, y, radius = 5, color = "white") {
+							super(x, y);
+							this.maxRadius = radius;
+							this.life = radius * 40;
+							this.color = color;
+						}
+						tickRender() {
+							super.tickRender();
+							
+							const radius = this.life / 40;
+							const color = parseColor(this.color);
+							const newAlpha = radius * color[3] / this.maxRadius;
+							ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${newAlpha})`;
+
+							ctx.beginPath();
+							ctx.ellipse(this.x, this.y, radius, radius, 0, 0, 2 * Math.PI);
+							ctx.fill();
+						}
+					}
+
+					class Ray extends Particle { 
+						color;
+						degrees;
+						angle;
+						constructor(x, y, color = "white") {
+							super(x, y);
+							this.color = color;
+							this.degrees = randInt(0, 359);
+							this.angle = randInt(3, 6);
+						}
+						tickRender() {
+							ctx.save();
+
+							const width = ctx.canvas.width;
+							const height = ctx.canvas.height;
+							const clipPath = new Path2D();
+							clipPath.rect(0, 0, width, height);
+							ctx.clip(clipPath); // 剩下的效率优化交给底层就好了喵
+
+							const x = this.x;
+							const y = this.y;
+							const length = width + height;
+							const radCenter = this.degrees * Math.PI / 180;
+							const radHalfAngle = (this.angle / 2) * Math.PI / 180;
+							const radLeft = radCenter - radHalfAngle;
+							const radRight = radCenter + radHalfAngle;
+							
+							const points = [
+								{ x, y },
+								{ 
+									x: x + length * Math.cos(radLeft), 
+									y: y + length * Math.sin(radLeft) 
+								},
+								{ 
+									x: x + length * Math.cos(radCenter), 
+									y: y + length * Math.sin(radCenter) 
+								},
+								{ 
+									x: x + length * Math.cos(radRight), 
+									y: y + length * Math.sin(radRight) 
+								}
+							];
+							
+							ctx.beginPath();
+							ctx.moveTo(points[0].x, points[0].y);
+							ctx.lineTo(points[1].x, points[1].y);
+							ctx.lineTo(points[3].x, points[3].y);
+							ctx.lineTo(points[2].x, points[2].y);
+							ctx.closePath();
+							
+							ctx.fillStyle = this.color;
+							ctx.filter = "blur(2px)";
+							ctx.fill();
+
+							ctx.restore();
+						}
+					}
+
+					class Nuclear extends Particle {
+						start;
+						duration;
+						maxRadius;
+						color;
+						constructor(x, y, duration, maxRadius, color = "white") {
+							super(x, y);
+							this.topMost = true;
+							this.start = Date.now();
+							this.duration = duration;
+							this.maxRadius = maxRadius + 30;
+							this.color = color;
+						}
+						tickRender() {
+							ctx.save();
+							
+							const width = ctx.canvas.width;
+							const height = ctx.canvas.height;
+							const clipPath = new Path2D();
+							clipPath.rect(0, 0, width, height);
+							ctx.clip(clipPath);
+
+							ctx.beginPath();
+							const progress = Math.min((Date.now() - this.start) / this.duration, 1);
+							const radius = this.maxRadius * progress;
+							ctx.ellipse(this.x, this.y, radius, radius, 0, 0, Math.PI * 2);
+							ctx.closePath();
+
+							ctx.fillStyle = this.color;
+							ctx.filter = "blur(10px)";
+							ctx.fill();
+
+							ctx.restore();
+						}
+					}
+
+					class Curtain extends Particle {
+						color;
+						start;
+						duration;
+						invert;
+						constructor(duration, invert, color = "white") {
+							super(0, 0);
+							this.topMost = true;
+							this.color = color;
+							this.start = Date.now();
+							this.duration = duration;
+							this.invert = invert;
+						}
+						tickRender() {
+							const rgba = parseColor(this.color);
+							let progress = (Date.now() - this.start) / this.duration;
+
+							if (this.invert) {
+								progress = 1 - progress;
+							}
+
+							const newColor = `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${rgba[3] * progress})`;
+
+							ctx.fillStyle = newColor;
+							ctx.fillRect(0, 0, canvas.width, canvas.height);
+						}
+					}
+
+					/**
+					 * 表示一个形状被切割为两半时的剩余块喵
+					 */
+					class Oddment extends Particle {
+						// 不想做了喵
+						// 摆烂喵
+						// 很麻烦哦，要指定切割形状的不同路径喵
+						// 反正现在的气泡粒子也够了喵
+					}
+
+					function bindListener(target, type, listener) {
+						target.addEventListener(type, listener);
+						listeners.push(() => target.removeEventListener(type, listener));
+					}
+
+					bindListener(canvas, "pointerdown", e => {
+						if (pressedId == null) {
+							pressedId = e.pointerId;
+							e.stopPropagation();
+							if (!pauseWorld) {
+								pointerTracks.length = 1;
+								pointerTracks[0].length = 0;
+							}
+						}
+					});
+
+					bindListener(document, "pointermove", e => {
+						if (pressedId == e.pointerId) {
+							e.stopPropagation();
+							const rect = canvas.getBoundingClientRect();
+							const offsetX = e.clientX - rect.left;
+							const offsetY = e.clientY - rect.top;
+							for (const listener of pointerQueue) {
+								listener(offsetX, offsetY, lastX, lastY);
+							}
+							lastX = offsetX;
+							lastY = offsetY;
+						}
+					});
+
+					bindListener(document, "pointerup", e => {
+						if (pressedId == e.pointerId) {
+							pressedId = null;
+							lastX = NaN;
+							lastY = NaN;
+							pointerHits = null;
+							e.stopPropagation();
+						}
+					});
+
+					bindListener(document, "pointercancel", e => {
+						if (pressedId == e.pointerId) {
+							pressedId = null;
+							lastX = NaN;
+							lastY = NaN;
+							pointerHits = null;
+							e.stopPropagation();
+						}
+					});
+
+					function waitForMove() {
+						const { promise, resolve } = Promise.withResolvers();
+						pointerQueue.push((ox, oy, lx, ly) => resolve([ox, oy, lx, ly]));
+						return promise;
+					}
+
+					function waitForAnimationFrame() {
+						if (shutdown) {
+							return pending;
+						}
+
+						const { promise, resolve } = Promise.withResolvers();
+						requestAnimationFrame(() => resolve());
+						return promise;
+					}
+
+					function waitForPlayerLooper(name) {
+						const { promise, resolve } = Promise.withResolvers();
+						playerLooper[name] = resolve;
+						return promise;
+					}
+
+					function waitForHitShape() {
+						const { promise, resolve } = Promise.withResolvers();
+						onHitShape = resolve;
+						return promise;
+					}
+
+					function waitForStageClear() {
+						if (shapes.length > 0) {
+							const { promise, resolve } = Promise.withResolvers();
+							onStageClear = resolve;
+							return promise;
+						}
+					}
+
+					function walkLastPointer(lx, ly) {
+						const lastFrameIndex = pointerTracks.length - 1;
+						let frameIndex = Math.max(0, lastFrameIndex - 3);
+						let curFrame = pointerTracks[frameIndex];
+
+						if (curFrame.length > 0) {
+							return curFrame[0];
+						}
+
+						const walkCount = 2;
+						let walkCounter;
+						let leftFrameIndex = frameIndex - 1;
+						let rightFrameIndex = frameIndex + 1;
+
+						while (true) {
+							let hasMore = false;
+							walkCounter = walkCount;
+
+							while (leftFrameIndex >= 0 && walkCounter--) {
+								hasMore = true;
+								curFrame = pointerTracks[leftFrameIndex];
+								if (curFrame.length > 0) {
+									return curFrame[0];
+								}
+								leftFrameIndex--;
+							}
+
+							walkCounter = walkCount;
+
+							while (rightFrameIndex <= lastFrameIndex && walkCounter--) {
+								hasMore = true;
+								curFrame = pointerTracks[rightFrameIndex];
+								if (curFrame.length > 0) {
+									return curFrame[0];
+								}
+								rightFrameIndex++;
+							}
+
+							if (!hasMore) {
+								break;
+							}
+						}
+
+						return [lx, ly];
+					}
+
+					async function performPointerCoroutine() {
+						while (true) {
+							const [ox, oy, lx, ly] = await waitForMove();
+
+							if (pauseWorld) {
+								continue;
+							}
+
+							const lastFrame = pointerTracks.length - 1;
+							pointerTracks[lastFrame].push([ox, oy]);
+
+							if (isFinite(lx) && isFinite(ly)) {
+								const [hsx, hsy] = walkLastPointer(lx, ly);
+								pointerHits = [hsx, hsy, ox, oy];
+							}
+						}
+					}
+
+					async function performRoundCoroutine() {
+						while (roundCount > 0) {
+							await throwRoundItems();
+							roundCount--;
+
+							if (typeof info.nextRoundInterval == "number" && info.nextRoundInterval < 0) {
+								await waitForStageClear();
+							} else {
+								await delay(randRange(info.nextRoundInterval));
+							}
+						}
+
+						await waitForStageClear();
+
+						onHitShape?.(null);
+						onHitShape = null;
+					}
+
+					async function performPointerTrackCoroutine() {
+						while (true) {
+							await waitForPlayerLooper("track");
+
+							if (pauseWorld) {
+								continue;
+							}
+
+							pointerTracks.push([]);
+
+							if (pointerTracks.length > maxPointerTrack) {
+								pointerTracks.splice(0, pointerTracks.length - maxPointerTrack);
+							}
+						}
+					}
+
+					async function performPhysicsCoroutine() {
+						while (true) {
+							await waitForPlayerLooper("physics");
+
+							for (const particle of particles) {
+								particle.tickSuperPhysics();
+							}
+
+							for (const shape of shapes) {
+								shape.tickSuperPhysics();
+							}
+
+							if (pauseWorld) {
+								continue;
+							}
+
+							for (let i = particles.length; i--;) {
+								const particle = particles[i];
+
+								if (--particle.life <= 0) {
+									particles.splice(i, 1);
+								}
+							}
+
+							const hits = [];
+							let hitBomb = null;
+
+							for (let i = shapes.length; i--;) {
+								const shape = shapes[i];
+								const bounds = shape.getBounds();
+
+								if (bounds[1] - 10 >= gameHeight) {
+									shape.destroy("out");
+									continue;
+								}
+
+								if (pointerHits && shape.hitTest(...pointerHits)) {
+									hits.push(shape.itemType);
+
+									if (typeof shape.itemType == "string") {
+										game.playAudio("effect", `fruitninja_${shape.itemType}`);
+									} else {
+										game.playAudio("effect", "fruitninja_splatter");
+									}
+
+									if (typeof shape.itemType == "string") {
+										hits.length = 0;
+										hitBomb = shape;
+										break;
+									} else {
+										shape.destroy("hit");
+									}
+								}
+							}
+
+							if (hitBomb) {
+								onHitBomb(hitBomb, pointerHits.slice());
+								continue;
+							}
+
+							if (hits.length) {
+								onHitShape?.(hits);
+								onHitShape = null;
+							}
+
+							for (const particle of particles) {
+								particle.tickPhysics();
+							}
+
+							for (const shape of shapes) {
+								shape.tickPhysics();
+							}
+						}
+					}
+
+					async function performRenderCoroutine() {
+						while (true) {
+							await waitForPlayerLooper("render");
+
+							ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+							for (const particle of particles) {
+								if (!particle.topMost) {
+									particle.tickRender();
+								}
+							}
+
+							for (const shape of shapes) {
+								shape.tickRender();
+							}
+
+							const tracks = pointerTracks.flat();
+							renderPointerPath(tracks);
+
+							for (const particle of particles) {
+								if (particle.topMost) {
+									particle.tickRender();
+								}
+							}
+
+							renderCurrentLife(hideOneHeart);
+						}
+					}
+
+					async function performPlayerLooperCoroutine() {
+						function callPlayerLooper(name) {
+							playerLooper[name]?.();
+							playerLooper[name] = null;
+						}
+
+						// 主游戏循环喵
+						while (true) {
+							await waitForAnimationFrame(); // 等待下一帧喵
+							callPlayerLooper("track"); // 执行指针跟踪喵
+							callPlayerLooper("physics"); // 执行物理计算喵
+							callPlayerLooper("render"); // 执行渲染计算喵
+						}
+					}
+
+					// 启动所有协程喵
+					performPointerCoroutine();
+					performPointerTrackCoroutine();
+					performRoundCoroutine();
+					performPhysicsCoroutine();
+					performRenderCoroutine();
+					performPlayerLooperCoroutine();
+
+					// 主迭代循环喵
+					while (true) {
+						const itemTypes = await waitForHitShape();
+
+						if (!itemTypes) {
+							break;
+						}
+
+						if (itemTypes.length > 0) {
+							for (const itemType of itemTypes) {
+								yield itemType;
+							}
+						}
+					}
+
+					// 清理额外的节点喵
+					colorParser.remove();
+					// 清理所有监听器喵
+					listeners.forEach(l => void l());
+					// 终止游戏喵
+					shutdown = true;
+				}
+				static pickCards(count = null) {
+					count ??= (get.isLuckyStar(player) ? 3 : [1, 2, 3].randomGet()) + (get.mode() === "doudizhu" ? 0 : 2);
+
+					const names = new Set();
+					const cards = [];
+
+					for (let i = count; i--;) {
+						const card = !cards.length ? get.cards(1, true)[0] : get.cardPile(function (card) {
+							return !names.has(card.name);
+						});
+						if (!card) {
+							break;
+						}
+						names.add(card.name);
+						cards.push(card);
+					}
+
+					return cards;
+				}
+				/**
+				 * @param {Card[]} cards 
+				 * @param {Dialog|null} dialog 
+				 * @param {Diffculty|null} difficult 
+				 */
+				static startGame(cards, dialog = null, difficult = null) {
+					let showDialog = false;
+
+					if (!dialog) {
+						dialog = ui.create.dialog("forcebutton", "hidden");
+						dialog.style.left = `calc(50% - ${gameWidth / 2}px)`;
+						dialog.style.width = `${gameWidth}px`;
+						showDialog = true;
+					}
+
+					dialog.classList.add("fixed");
+
+					const canvas = document.createElement("canvas");
+					canvas.width = gameWidth;
+					canvas.height = gameHeight;
+					dialog.content.append(canvas);
+
+					const game = new FruitNinja(cards);
+
+					if (difficult && difficult in diffcultyInfo) {
+						game.#diffcult = difficult;
+					}
+
+					if (showDialog) {
+						dialog.open();
+					}
+					
+					return game.performGame(canvas);
+				}
+			}
+
+			return FruitNinja;
+		})(),
 	},
 	//恁就是仲村由理？
 	zhengjing2: {
