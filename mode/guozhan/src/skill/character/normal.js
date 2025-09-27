@@ -1002,6 +1002,9 @@ export default {
 	/** @type {Skill} */
 	gz_fangzhu: {
 		audio: "fangzhu",
+		audioname2: {
+			new_simayi: "refangzhu_new_simayi",
+		},
 		trigger: {
 			player: "damageEnd",
 		},
@@ -1182,7 +1185,7 @@ export default {
 		async content(event, trigger, player) {
 			const num = trigger.player.countCards("e");
 			const num2 = event.cards.length;
-			await player.discardPlayerCard(trigger.player, "e", num2, true);
+			await player.discardPlayerCard(trigger.player, "e", num2, true, "allowChooseAll");
 			if (num2 > num) {
 				await trigger.player.damage();
 			}
@@ -1203,10 +1206,11 @@ export default {
 			if (player == target) {
 				return false;
 			}
-			return !player.getStorage("rerende_targeted").includes(target);
+			return !player.getStorage("gz_rende_targeted").includes(target);
 		},
 		filterCard: true,
 		selectCard: [1, Infinity],
+		allowChooseAll: true,
 		discard: false,
 		lose: false,
 		delay: false,
@@ -1255,7 +1259,7 @@ export default {
 			});
 			await player.give(cards, target);
 			const list = get.inpileVCardList(info => {
-				return get.type(info[2]) == "basic" && player.hasUseTarget(new lib.element.VCard({ name: info[2], nature: info[3] }), void 0, true);
+				return get.type(info[2]) == "basic" && player.hasUseTarget(new lib.element.VCard({ name: info[2], nature: info[3], isCard: true }), void 0, true);
 			});
 			if (num < 2 && num + cards.length > 1 && list.length) {
 				const links = await player
@@ -1334,6 +1338,7 @@ export default {
 		audio: "wusheng",
 		audioname: ["re_guanyu", "jsp_guanyu", "re_guanzhang", "dc_jsp_guanyu"],
 		audioname2: {
+			gz_guansuo: "wusheng_guansuo",
 			dc_guansuo: "wusheng_guansuo",
 			guanzhang: "wusheng_guanzhang",
 			guansuo: "wusheng_guansuo",
@@ -1811,6 +1816,27 @@ export default {
 		},
 	},
 
+	/** @type {Skill} */
+	gz_mashu: {
+		mod: {
+			globalFrom(from, to, distance) {
+				return distance - 1;
+			},
+		},
+	},
+	/** @type {Skill} */
+	gz_md_mashu: {
+		inherit: "gz_mashu",
+	},
+	/** @type {Skill} */
+	gz_mt_mashu: {
+		inherit: "gz_mashu",
+	},
+	/** @type {Skill} */
+	gz_pd_mashu: {
+		inherit: "gz_mashu",
+	},
+
 	// gz_huangzhong
 	/** @type {Skill} */
 	gz_liegong: {
@@ -2134,12 +2160,12 @@ export default {
 		preHidden: true,
 		async cost(event, trigger, player) {
 			event.result = await player
-				.chooseTarget(get.prompt2("gzshushen_new"), lib.filter.notMe)
+				.chooseTarget(get.prompt2(event.skill), lib.filter.notMe)
 				.set("ai", target => {
 					const player = get.player();
 					return get.effect(target, { name: "draw" }, player, player) * (1 + (target.countCards("h") == 0 ? 1 : 0));
 				})
-				.setHiddenSkill("gzshushen_new")
+				.setHiddenSkill(event.skill)
 				.forResult();
 		},
 		async content(event, trigger, player) {
@@ -2155,6 +2181,9 @@ export default {
 	gz_zhiheng: {
 		inherit: "zhiheng",
 		audio: "zhiheng",
+		audioname2: {
+			new_simayi: "rezhiheng_new_simayi",
+		},
 		selectCard() {
 			const player = get.player();
 			const range1 = [1, player.maxHp];
@@ -2323,13 +2352,13 @@ export default {
 		audio: "duoshi",
 		trigger: { player: "phaseUseBegin" },
 		filter(event, player) {
-			return player.hasUseTarget(new lib.element.VCard({ name: "yiyi" }));
+			return player.hasUseTarget(new lib.element.VCard({ name: "yiyi", isCard: true }));
 		},
 		direct: true,
 		preHidden: true,
 		async content(event, trigger, player) {
 			await player
-				.chooseUseTarget(get.prompt2(event.name), new lib.element.VCard({ name: "yiyi" }), false)
+				.chooseUseTarget(get.prompt2(event.name), new lib.element.VCard({ name: "yiyi", isCard: true }), false)
 				.set("hiddenSkill", event.name)
 				.set("logSkill", event.name);
 		},

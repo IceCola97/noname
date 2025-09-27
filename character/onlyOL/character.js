@@ -1,4 +1,29 @@
 const characters = {
+	ol_sb_xuyou: {
+		sex: "male",
+		group: "qun",
+		hp: 3,
+		skills: ["olsbqianfu", "olsbyushi", "olsbfenchao"],
+	},
+	ol_sb_lusu: {
+		sex: "male",
+		group: "wu",
+		hp: 3,
+		skills: ["olsbduduan", "olsbyinglve", "olsbmengshi"],
+	},
+	ol_sb_zhugeliang: {
+		sex: "male",
+		group: "shu",
+		hp: 3,
+		skills: ["olsbzhitian", "olsbwujing", "olsbzhijue"],
+		names: "诸葛|亮",
+	},
+	ol_sunluban: {
+		sex: "female",
+		group: "wu",
+		hp: 3,
+		skills: ["olzenhui", "oljiaojin"],
+	},
 	dm_lvbu: {
 		sex: "male",
 		group: "qun",
@@ -57,7 +82,7 @@ const characters = {
 		sex: "male",
 		group: "qun",
 		hp: 4,
-		skills: ["olchaozheng", "olshenchong", "jsrgjulian"],
+		skills: ["olchaozheng", "olshenchong", "oljulian"],
 		isZhugong: true,
 		img: "image/character/jsrg_liuhong.jpg",
 		dieAudios: ["jsrg_liuhong"],
@@ -88,6 +113,7 @@ const characters = {
 		hp: 3,
 		skills: ["olsblucun", "olsbtuisheng"],
 		trashBin: ["sex:male_castrated"],
+		dieAudios: ["3"],
 	},
 	ol_fuhuanghou: {
 		sex: "female",
@@ -129,7 +155,7 @@ const characters = {
 		sex: "female",
 		group: "shu",
 		hp: 3,
-		skills: ["olsbbingcai", "olsblixian"],
+		skills: ["olsblixian", "olsbbingcai"],
 	},
 	ol_sb_jushou: {
 		sex: "male",

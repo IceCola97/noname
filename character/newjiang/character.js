@@ -1,4 +1,10 @@
 const characters = {
+	yao_yuanshu: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		skills: ["dcwangyao", "dczengua", "dckanghui"],
+	},
 	yj_zhanghuan: {
 		sex: "male",
 		group: "qun",
@@ -209,7 +215,7 @@ const characters = {
 		sex: "male",
 		group: "qun",
 		hp: 3,
-		maxHp: 4,
+		maxHp: 5,
 		skills: ["xiongjin", "zhenbian", "baoxi"],
 	},
 	fj_peixiu: {

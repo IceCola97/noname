@@ -1,21 +1,71 @@
 const characters = {
+	dc_sb_xusheng:{
+		sex:"male",
+		group:"wu",
+		hp:4,
+		skills:["dcsbqinqiang"]
+	},
+	
+	xvwen:{
+		sex:"female",
+		hp:3,
+		group:"wei",
+		skills:["dcfuhui","dcmohua"]
+	},
+	v_sunce: {
+		sex: "male",
+		group: "wu",
+		hp: 4,
+		skills: ["dczhifeng", "dcweijing"],
+	},
+	v_caocao: {
+		sex: "male",
+		group: "wei",
+		hp: 4,
+		skills: ["dcduoyue", "dcjunhe", "dcxiongwei"],
+	},
+	dc_sb_huangquan: {
+		sex: "male",
+		group: "wei",
+		hp: 3,
+		skills: ["dcsbqiaodui", "dcsbtuicheng"],
+	},
+	dc_sb_luotong: {
+		sex: "male",
+		group: "wu",
+		hp: 3,
+		skills: ["dcsbjuce", "dcsbkangming"],
+	},
+	dongxu: {
+		sex: "female",
+		group: "qun",
+		hp: 3,
+		skills: ["dcqingleng", "dczhendu"],
+	},
+	v_machao: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		skills: ["dczhongtao", "dcjizhan"],
+	},
+	dc_sb_luxun: {
+		sex: "male",
+		group: "wu",
+		hp: 3,
+		skills: ["dcsbjunmou", "dcsbzhanyan"],
+	},
 	dc_sb_dengai: {
 		sex: "male",
 		group: "wei",
 		hp: 4,
 		skills: ["dcsbzhouxi", "dcsbshijin"],
 	},
-	x_dc_zhangqiying: {
-		sex: "female",
-		group: "qun",
-		hp: 3,
-		skills: ["x_dc_falu", "x_dc_zhenyi", "x_dc_dianhua"],
-	},
 	y_dc_zhangqiying: {
 		sex: "female",
 		group: "qun",
 		hp: 3,
 		skills: ["y_dc_falu", "y_dc_zhenyi", "y_dc_dianhua"],
+		dieAudios: ["zhangqiying"],
 	},
 	renwan: {
 		sex: "female",
@@ -26,7 +76,7 @@ const characters = {
 	dc_sb_jiangwei: {
 		sex: "male",
 		group: "shu",
-		hp: 2,
+		hp: 3,
 		maxHp: 4,
 		skills: ["dcsbjuemou", "dcsbfuzhan"],
 	},

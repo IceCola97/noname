@@ -1,22 +1,35 @@
 const characters = {
+	mb_caocao: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		skills: ["mblingfa", "mbzhian"],
+	},
+	mb_caohong: {
+		sex: "male",
+		group: "wei",
+		hp: 4,
+		skills: ["mbyuanhu"],
+		dieAudios: ["caohong"],
+	},
+	pot_xinxianying: {
+		sex: "female",
+		group: "wei",
+		hp: 3,
+		skills: ["potjiejie", "potqingshi"],
+	},
 	mb_chenzhi: {
 		sex: "male",
 		group: "shu",
 		hp: 3,
 		skills: ["mbquanchong", "mbrenxing"],
 	},
-	sy_baosanniang: {
+	re_baosanniang: {
 		sex: "female",
 		group: "shu",
 		hp: 3,
-		skills: ["meiyong", "mbxushen", "mbzhennan"],
+		skills: ["mbshuyong", "mbxushen", "mbzhennan"],
 		dieAudios: ["baosanniang"],
-	},
-	fx_baosanniang: {
-		sex: "female",
-		group: "shu",
-		hp: 3,
-		skills: ["mbfangxu", "mbzhuguan", "mblisuo"],
 	},
 	mb_zerong: {
 		sex: "male",
@@ -1084,14 +1097,6 @@ const characters = {
 		skills: ["relianji", "remoucheng"],
 		clans: ["太原王氏"],
 		dieAudios: ["wangyun"],
-	},
-
-	re_baosanniang: {
-		sex: "female",
-		group: "shu",
-		hp: 3,
-		skills: ["meiyong", "rexushen", "rezhennan"],
-		dieAudios: ["baosanniang"],
 	},
 
 	hujinding: {

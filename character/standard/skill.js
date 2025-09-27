@@ -2,6 +2,23 @@ import { lib, game, ui, get, ai, _status } from "../../noname.js";
 
 /** @type { importCharacterConfig['skill'] } */
 const skills = {
+	//主公吕布
+	stdqingjiao: {
+		audio: 2,
+		trigger: {
+			player: "phaseJieshuBegin",
+		},
+		zhuSkill: true,
+		filter(event, player) {
+			return player.hasHistory("sourceDamage", evt => {
+				return evt.player != player && evt.player?.group == "qun";
+			});
+		},
+		forced: true,
+		async content(event, trigger, player) {
+			await player.draw();
+		},
+	},
 	//标准版乐进
 	stdxiaoguo: {
 		audio: "xiaoguo",
@@ -83,11 +100,14 @@ const skills = {
 		audio: "xinkuangfu",
 		trigger: { source: "damageSource" },
 		forced: true,
-		usable: 1,
 		filter(event, player) {
+			if (player.hasSkill("stdkuangfu_used")) {
+				return false;
+			}
 			return player.isPhaseUsing() && event.card && event.card.name == "sha" && event.player != player && event.player.isIn();
 		},
 		async content(event, trigger, player) {
+			player.addTempSkill("stdkuangfu_used", "phaseChange");
 			if (trigger.player.hp < player.hp) {
 				player.draw(2);
 			} else {
@@ -96,6 +116,11 @@ const skills = {
 		},
 		ai: {
 			halfneg: true,
+		},
+		subSkill: {
+			used: {
+				charlotte: true,
+			},
 		},
 	},
 	rewangzun: {
@@ -850,6 +875,7 @@ const skills = {
 		enable: "phaseUse",
 		filterCard: true,
 		selectCard: [1, Infinity],
+		allowChooseAll: true,
 		discard: false,
 		lose: false,
 		delay: 0,
@@ -1419,7 +1445,7 @@ const skills = {
 			return get.type(event.card) == "trick" && event.card.isCard;
 		},
 		async content(event, trigger, player) {
-			player.draw();
+			player.draw("nodelay");
 		},
 		ai: {
 			threaten: 1.4,
@@ -1458,6 +1484,7 @@ const skills = {
 		position: "he",
 		filterCard: true,
 		selectCard: [1, Infinity],
+		allowChooseAll: true,
 		prompt: "弃置任意张牌并摸等量的牌",
 		check(card) {
 			let player = _status.event.player;
@@ -1548,9 +1575,10 @@ const skills = {
 		audio: 2,
 		enable: "phaseUse",
 		prompt: "失去1点体力并摸两张牌",
+		delay: false,
 		async content(event, trigger, player) {
 			player.loseHp(1);
-			player.draw(2);
+			player.draw(2, "nodelay");
 		},
 		ai: {
 			basic: {

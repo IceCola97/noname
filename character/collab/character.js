@@ -1,4 +1,23 @@
 const characters = {
+	ol_le_liushan: {
+		sex: "male",
+		group: "shu",
+		hp: 3,
+		skills: ["oltuoquan", "olxianglv", "olanle"],
+	},
+	you_zhugeliang: {
+		sex: "male",
+		group: "shu",
+		hp: 3,
+		skills: ["dcyingyou"],
+	},
+	bigsb_dengai: {
+		sex: "male",
+		group: "wei",
+		hp: 3,
+		maxHp: 5,
+		skills: ["olandu", "olqiqi"],
+	},
 	wild_liru: {
 		sex: "male",
 		group: "qun",

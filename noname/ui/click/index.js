@@ -2833,7 +2833,7 @@ export class Click {
 			}
 		} else {
 			ui.selected.targets.add(this);
-			if (_status.event.name == "chooseTarget" || _status.event.name == "chooseToUse" || _status.event.name == "chooseCardTarget") {
+			if (["chooseTarget", "chooseToUse", "chooseCardTarget", "chooseButtonTarget"].includes(_status.event.name)) {
 				var targetprompt = null;
 				if (_status.event.targetprompt) {
 					targetprompt = _status.event.targetprompt;
@@ -3363,7 +3363,9 @@ export class Click {
 			fav.classList.add("active");
 		}
 
-		let intro, list = [], clickSkill;
+		let intro,
+			list = [],
+			clickSkill;
 		let skills = ui.create.div(".characterskill", uiintro);
 		const refreshIntro = function () {
 			if (intro?.firstChild) {
@@ -3396,20 +3398,13 @@ export class Click {
 				}
 
 				// 添加台词部分
-				let dieAudios = get.Audio.die({ player: bg.tempSkin || audioName })
+				let skinName = bg.tempSkin || audioName;
+				let dieAudios = get.Audio.die({ player: { name: name, skin: { name: skinName }, tempname: [skinName] } })
 					.audioList.map(i => i.text)
 					.filter(Boolean);
-				if (!dieAudios.length) {
-					dieAudios = get.Audio.die({ player: name })
-						.audioList.map(i => i.text)
-						.filter(Boolean);
-				}
 				const skillAudioMap = new Map();
 				nameinfo.skills.forEach(skill => {
-					let voiceMap = get.Audio.skill({ skill, player: bg.tempSkin || audioName }).textList;
-					if (!voiceMap.length) {
-						voiceMap = get.Audio.skill({ skill, player: name }).textList;
-					}
+					let voiceMap = get.Audio.skill({ skill, player: { name: name, skin: { name: skinName }, tempname: [skinName] } }).textList;
 					if (voiceMap.length) {
 						skillAudioMap.set(skill, voiceMap);
 					}
@@ -3429,10 +3424,7 @@ export class Click {
 							if (nameinfo.skills.includes(derivation[i])) {
 								continue;
 							}
-							let derivationVoiceMap = get.Audio.skill({ skill: derivation[i], player: bg.tempSkin || audioName }).textList;
-							if (!derivationVoiceMap.length) {
-								derivationVoiceMap = get.Audio.skill({ skill: derivation[i], player: name }).textList;
-							}
+							let derivationVoiceMap = get.Audio.skill({ skill: derivation[i], player: { name: name, skin: { name: skinName }, tempname: [skinName] } }).textList;
 							if (derivationVoiceMap.length) {
 								derivationSkillAudioMap.set(derivation[i], derivationVoiceMap);
 							}
@@ -3509,7 +3501,7 @@ export class Click {
 					this.classList.add("active");
 					if (this.link != "dieAudios") {
 						var skillname = get.translation(this.link);
-						var skilltranslationinfo = get.skillInfoTranslation(this.link);
+						var skilltranslationinfo = get.skillInfoTranslation(this.link, null, false);
 						if ((lib.config.show_skillnamepinyin == "showPinyin2" || lib.config.show_skillnamepinyin == "showCodeIdentifier2") && skillname != "阵亡") {
 							var skillpinyin = lib.config.show_skillnamepinyin == "showCodeIdentifier2" ? this.link : get.pinyin(skillname);
 							intro2.innerHTML = '<span style="font-weight:bold;margin-right:5px">' + skillname + "</span>" + '<span style="font-size:14px;font-family:SimHei,STHeiti,sans-serif">' + "[" + skillpinyin + "]" + "</span>" + "  " + skilltranslationinfo;
@@ -3520,6 +3512,7 @@ export class Click {
 						var skill = this.link;
 						var playername = this.linkname;
 						let audioName = this.linkAudioName;
+						let skinName = bg.tempSkin || audioName;
 						var skillnode = this;
 						if (info.derivation) {
 							var derivation = info.derivation;
@@ -3528,7 +3521,7 @@ export class Click {
 							}
 							for (var i = 0; i < derivation.length; i++) {
 								var derivationname = get.translation(derivation[i]);
-								var derivationtranslationinfo = get.skillInfoTranslation(derivation[i]);
+								var derivationtranslationinfo = get.skillInfoTranslation(derivation[i], null, false);
 								if ((lib.config.show_skillnamepinyin == "showPinyin2" || lib.config.show_skillnamepinyin == "showCodeIdentifier2") && derivationname.length <= 5 && derivation[i].indexOf("_faq") == -1) {
 									var derivationpinyin = lib.config.show_skillnamepinyin == "showCodeIdentifier2" ? derivation[i] : get.pinyin(derivationname);
 									intro2.innerHTML += '<br><br><span style="font-weight:bold;margin-right:5px">' + derivationname + "</span>" + '<span style="font-size:14px;font-family:SimHei,STHeiti,sans-serif">' + "[" + derivationpinyin + "]" + "</span>" + "  " + derivationtranslationinfo;
@@ -3539,9 +3532,8 @@ export class Click {
 						}
 
 						if (lib.config.background_speak && e !== "init") {
-							let name = bg.tempSkin || audioName || playername;
 							if (!this.playAudio || name != this.audioName) {
-								const audioList = get.Audio.skill({ skill: this.link, player: name }).fileList;
+								const audioList = get.Audio.skill({ skill: this.link, player: { name: playername, skin: { name: skinName }, tempname: [skinName] } }).fileList;
 								this.playAudio = game.tryAudio({
 									audioList,
 									addVideo: false,
@@ -3553,8 +3545,8 @@ export class Click {
 							this.playAudio();
 						}
 					} else {
-						let name = bg.tempSkin || this.linkname;
-						let dieAudios = get.Audio.die({ player: { name: this.playername, skin: { name: name } } })
+						let skinName = bg.tempSkin || this.linkname;
+						let dieAudios = get.Audio.die({ player: { name: this.playername, skin: { name: skinName }, tempname: [skinName] } })
 							.audioList.map(i => i.text)
 							.filter(Boolean);
 						intro2.innerHTML = '<span style="font-weight:bold;margin-right:5px">阵亡台词</span>';
@@ -3566,7 +3558,7 @@ export class Click {
 						});
 						if (lib.config.background_speak && e !== "init") {
 							if (!this.playAudio || name != this.audioName) {
-								let audioList = get.Audio.die({ player: { name: this.playername, skin: { name: name } } }).fileList;
+								let audioList = get.Audio.die({ player: { name: this.playername, skin: { name: skinName }, tempname: [skinName] } }).fileList;
 								this.playAudio = game.tryAudio({
 									audioList,
 									addVideo: false,
@@ -3731,20 +3723,13 @@ export class Click {
 				Array.from(htmlParser.childNodes).forEach(value => intro.appendChild(value));
 
 				// 添加台词部分
-				let dieAudios = get.Audio.die({ player: bg.tempSkin || audioName })
+				let skinName = bg.tempSkin || audioName;
+				let dieAudios = get.Audio.die({ player: { name: name, skin: { name: skinName }, tempname: [skinName] } })
 					.audioList.map(i => i.text)
 					.filter(Boolean);
-				if (!dieAudios.length) {
-					dieAudios = get.Audio.die({ player: name })
-						.audioList.map(i => i.text)
-						.filter(Boolean);
-				}
 				const skillAudioMap = new Map();
 				nameInfo.skills.forEach(skill => {
-					let voiceMap = get.Audio.skill({ skill, player: bg.tempSkin || audioName }).textList;
-					if (!voiceMap.length) {
-						voiceMap = get.Audio.skill({ skill, player: name }).textList;
-					}
+					let voiceMap = get.Audio.skill({ skill, player: { name: name, skin: { name: skinName }, tempname: [skinName] } }).textList;
 					if (voiceMap.length) {
 						skillAudioMap.set(skill, voiceMap);
 					}
@@ -3764,10 +3749,7 @@ export class Click {
 							if (nameInfo.skills.includes(derivation[i])) {
 								continue;
 							}
-							let derivationVoiceMap = get.Audio.skill({ skill: derivation[i], player: bg.tempSkin || audioName }).textList;
-							if (!derivationVoiceMap.length) {
-								derivationVoiceMap = get.Audio.skill({ skill: derivation[i], player: name }).textList;
-							}
+							let derivationVoiceMap = get.Audio.skill({ skill: derivation[i], player: { name: name, skin: { name: skinName }, tempname: [skinName] } }).textList;
 							if (derivationVoiceMap.length) {
 								derivationSkillAudioMap.set(derivation[i], derivationVoiceMap);
 							}
@@ -3862,12 +3844,13 @@ export class Click {
 							skillNameSpanStyle.marginRight = "5px";
 							introduction2.appendChild(skillNameSpan);
 						}
-						htmlParser.innerHTML = get.skillInfoTranslation(this.link);
+						htmlParser.innerHTML = get.skillInfoTranslation(this.link, null, false);
 						Array.from(htmlParser.childNodes).forEach(childNode => introduction2.appendChild(childNode));
 						var info = get.info(this.link);
 						var skill = this.link;
 						var playername = this.linkname;
 						let audioName = this.linkAudioName;
+						let skinName = bg.tempSkin || audioName;
 						var skillnode = this;
 						let derivations = info.derivation;
 						if (derivations) {
@@ -3901,15 +3884,14 @@ export class Click {
 									derivationNameSpanStyle.marginRight = "5px";
 									introduction2.appendChild(derivationNameSpan);
 								}
-								htmlParser.innerHTML = get.skillInfoTranslation(derivation);
+								htmlParser.innerHTML = get.skillInfoTranslation(derivation, null, false);
 								Array.from(htmlParser.childNodes).forEach(childNode => introduction2.appendChild(childNode));
 							});
 						}
 
 						if (lib.config.background_speak && e !== "init") {
-							let name = bg.tempSkin || audioName || playername;
 							if (!this.playAudio || name != this.audioName) {
-								const audioList = get.Audio.skill({ skill: this.link, player: name }).fileList;
+								const audioList = get.Audio.skill({ skill: this.link, player: { name: playername, skin: { name: skinName }, tempname: [skinName] } }).fileList;
 								this.playAudio = game.tryAudio({
 									audioList,
 									addVideo: false,
@@ -3921,8 +3903,8 @@ export class Click {
 							this.playAudio();
 						}
 					} else {
-						let name = bg.tempSkin || this.linkname;
-						let dieAudios = get.Audio.die({ player: { name: this.playername, skin: { name: name } } })
+						let skinName = bg.tempSkin || this.linkname;
+						let dieAudios = get.Audio.die({ player: { name: this.playername, skin: { name: skinName }, tempname: [skinName] } })
 							.audioList.map(i => i.text)
 							.filter(Boolean);
 						introduction2.innerHTML = '<span style="font-weight:bold;margin-right:5px">阵亡台词</span>';
@@ -3986,7 +3968,7 @@ export class Click {
 				continue;
 			}
 			let info = get.info(skill);
-			if (!info || info.nopop) {
+			if (!Object.keys(info)?.length || info.nopop) {
 				continue;
 			}
 			if (!lib.translate[skill] || !lib.translate[skill + "_info"]) {
@@ -4009,14 +3991,9 @@ export class Click {
 				clickSkill.call(currentx, "init");
 			}
 		}
-		let dieAudios = get.Audio.die({ player: bg.tempSkin || audioName })
+		let dieAudios = get.Audio.die({ player: { name: name, skin: { name: bg.tempSkin || audioName } } })
 			.audioList.map(i => i.text)
 			.filter(Boolean);
-		if (!dieAudios.length) {
-			dieAudios = get.Audio.die({ player: name })
-				.audioList.map(i => i.text)
-				.filter(Boolean);
-		}
 		if (dieAudios.length) {
 			let dieaudio = ui.create.div(".menubutton.large", skills, clickSkill, "阵亡");
 			dieaudio.style.backgroundColor = "rgb(0, 0, 0, 1)";
@@ -4048,15 +4025,21 @@ export class Click {
 							playerbg.classList.remove("scroll");
 							bg.style.backgroundImage = this.style.backgroundImage;
 							bg.tempSkin = this.name;
+							const skillButtons = document.getElementsByClassName("characterskill")?.[0]?.childNodes;
+							for (let i = 0; i < skills.length; i++) {
+								delete skillButtons[i].playAudio;
+							}
 							refreshIntro();
+							game.callHook("refreshSkin", [list[0], this.name]);
 						});
 						let iSTemp = false;
 						if (!lib.character[i] && skinList.some(skin => skin[0] == i)) {
 							iSTemp = true;
-							lib.character[i] = ["", "", 0, [], (skinList.find(skin => skin[0] == i) || [i, []])[1]];
+							lib.character[i] = get.convertedCharacter(["", "", 0, [], (skinList.find(skin => skin[0] == i) || [i, []])[1]]);
 						}
 						button.name = i;
-						button.setBackground(i, "character");
+						const skinImg = lib.character[i].img;
+						skinImg ? button.setBackgroundImage(skinImg) : button.setBackground(i, "character");
 						if (iSTemp) {
 							delete lib.character[i];
 						}
@@ -4112,6 +4095,7 @@ export class Click {
 			}
 			delete ui.throwEmotion;
 			delete _status.removePop;
+			game.closePoptipDialog();
 			uiintro.delete();
 			this.remove();
 			ui.historybar.style.zIndex = "";
@@ -4144,11 +4128,14 @@ export class Click {
 			}
 		}
 		uiintro.style.zIndex = 21;
-		var clickintro = function () {
-			if (_status.touchpopping) {
+		var clickintro = function (e) {
+			const poptip = e.relatedTarget?.parentNode?.parentNode;
+			const isPoptip = e.target?.matches("noname-poptip") || (poptip && poptip === _status.poptip?.[0]);
+			if (_status.touchpopping || isPoptip) {
 				return;
 			}
 			delete _status.removePop;
+			game.closePoptipDialog();
 			layer.remove();
 			this.delete();
 			ui.historybar.style.zIndex = "";

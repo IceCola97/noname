@@ -1,4 +1,36 @@
 const characters = {
+	tw_jsrg_hejin: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		skills: ["jsrgzhaobing", "twzhuhuan", "jsrgyanhuo"],
+		img: "image/character/jsrg_hejin.jpg",
+		dieAudios: ["jsrg_hejin"],
+	},
+	tw_jsrg_caocao: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		skills: ["twzhenglve", "jsrghuilie"],
+		img: "image/character/jsrg_caocao.jpg",
+		dieAudios: ["jsrg_caocao"],
+	},
+	tw_jsrg_huangfusong: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		names: "皇甫|嵩",
+		skills: ["jsrgguanhuo", "twjuxia"],
+		img: "image/character/jsrg_huangfusong.jpg",
+		dieAudios: ["jsrg_huangfusong"],
+	},
+	tw_zhenji: {
+		sex: "female",
+		group: "qun",
+		hp: 3,
+		skills: ["mbbojian", "twjiwei"],
+		dieAudios: ["mb_sp_zhenji"],
+	},
 	tw_zhuzhi: {
 		sex: "male",
 		group: "wu",
@@ -272,7 +304,7 @@ const characters = {
 	xia_xiahousone: {
 		sex: "female",
 		group: "qun",
-		hp: 3,
+		hp: 4,
 		skills: ["twchengxi"],
 		names: "夏侯|子萼",
 	},
@@ -415,6 +447,7 @@ const characters = {
 		group: "qun",
 		hp: 4,
 		skills: ["twfupan"],
+		names: "null|null",
 	},
 	tw_liwei: {
 		sex: "male",

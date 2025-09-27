@@ -2460,7 +2460,7 @@ const skills = {
 					return lib.filter.cardDiscardable(card, player, "nstuilun");
 				}, "h")
 			) {
-				player.chooseToDiscard("h", true, [1, player.countCards("h") - 1]);
+				player.chooseToDiscard("h", true, [1, player.countCards("h") - 1], "allowChooseAll");
 			} else {
 				game.delayx();
 			}
@@ -4589,6 +4589,7 @@ const skills = {
 		filterTarget: lib.filter.notMe,
 		filterCard: true,
 		selectCard: [1, Infinity],
+		allowChooseAll: true,
 		position: "h",
 		discard: false,
 		lose: false,
@@ -5762,9 +5763,6 @@ const skills = {
 					if (!info) {
 						continue;
 					}
-					if (info.shaRelated) {
-						return true;
-					}
 					if (info && info.trigger) {
 						for (var j in info.trigger) {
 							var cond = info.trigger[j];
@@ -5796,10 +5794,7 @@ const skills = {
 							}
 						}
 					}
-					if (info.shaRelated === false) {
-						return false;
-					}
-					if (get.plainText(get.skillInfoTranslation(list[i], player)).includes("【杀】")) {
+					if (get.skillInfoTranslation(list[i], player).includes("【杀】")) {
 						return true;
 					}
 				}
@@ -5847,7 +5842,7 @@ const skills = {
 						if (info.ai?.neg || info.ai?.halfneg || info.ai?.combo) {
 							return false;
 						}
-						return ["使用【杀】时", "使用【杀】指定"].some(str => get.plainText(get.skillInfoTranslation(skill, player)).includes(str));
+						return ["使用【杀】时", "使用【杀】指定"].some(str => get.skillInfoTranslation(skill, player).includes(str));
 					})
 				);
 			event.result = {
@@ -5914,6 +5909,7 @@ const skills = {
 		},
 		discard: false,
 		prepare: "give2",
+		allowChooseAll: true,
 		content() {
 			target.gain(cards, player);
 			var num = Math.floor(cards.length / 2);

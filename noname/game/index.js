@@ -25,6 +25,7 @@ import { Check } from "./check.js";
 import security from "../util/security.js";
 import { GameCompatible } from "./compatible.js";
 import { save } from "../util/config.js";
+import { debounce } from "../util/utils.js";
 
 export class Game extends GameCompatible {
 	documentZoom;
@@ -44,6 +45,12 @@ export class Game extends GameCompatible {
 	 * @type { { [key: string]: Player } }
 	 */
 	playerMap = {};
+	/**
+	 * 当主机返回结果时，客机应该根据此Map的数据寻找回调函数喵
+	 *
+	 * @type { { [key: string]: function } }
+	 */
+	dataRequestMap = {};
 	phaseNumber = 0;
 	roundNumber = 0;
 	shuffleNumber = 0;
@@ -229,11 +236,11 @@ export class Game extends GameCompatible {
 	/**
 	 * 交换两个元素的位置，并附带动画
 	 * 封装了game.$elementGoto函数，特化对于两个元素交换位置的情况喵
-	 * 
-	 * @param {HTMLElement} elementA 
-	 * @param {HTMLElement} elementB 
-	 * @param {number} duration 
-	 * @param {'linear'|'ease-in-out'} timefun 
+	 *
+	 * @param {HTMLElement} elementA
+	 * @param {HTMLElement} elementB
+	 * @param {number} duration
+	 * @param {'linear'|'ease-in-out'} timefun
 	 * @returns {Promise<void>}
 	 */
 	async $elementSwap(elementA, elementB, duration = 400, timefun = "linear") {
@@ -254,10 +261,7 @@ export class Game extends GameCompatible {
 			await game.$elementSwap(elementB, elementA, duration, timefun);
 		} else {
 			// 否则我们直接入队交换就好哦喵
-			await Promise.all([
-				game.$elementGoto(elementA, parentB, elementB.nextElementSibling || "last", duration, timefun),
-				game.$elementGoto(elementB, parentA, elementA.nextElementSibling || "last", duration, timefun),
-			]);
+			await Promise.all([game.$elementGoto(elementA, parentB, elementB.nextElementSibling || "last", duration, timefun), game.$elementGoto(elementB, parentA, elementA.nextElementSibling || "last", duration, timefun)]);
 		}
 	}
 	/**
@@ -284,7 +288,7 @@ export class Game extends GameCompatible {
 	/**
 	 * 带动画的将元素移动到某个父元素的某个位置喵
 	 * 允许元素附带变换（位移旋转什么的都可以），甚至本身还处于上一次$elementGoto的动画中也可以喵（不过我没测试哦）
-	 * 
+	 *
 	 * @param {HTMLElement} element
 	 * @param {HTMLElement} parent
 	 * @param {number|'first'|'last'|Node} position 新的父容器中元素去的位置
@@ -300,8 +304,8 @@ export class Game extends GameCompatible {
 
 		/**
 		 * 从element的transform字符串中解析位移喵
-		 * 
-		 * @param {HTMLElement} element 
+		 *
+		 * @param {HTMLElement} element
 		 * @returns {[number, number]} 当前元素实际变换的坐标喵
 		 */
 		function parseTranslate(element) {
@@ -318,15 +322,24 @@ export class Game extends GameCompatible {
 			}
 		}
 
+		function getScaledBound(element) {
+			let { x, y, width, height } = element.getBoundingClientRect();
+			x /= game.documentZoom;
+			y /= game.documentZoom;
+			width /= game.documentZoom;
+			height /= game.documentZoom;
+			return { x, y, width, height };
+		}
+
 		/**
 		 * 计算element当前的位置喵
 		 * 包括变换效果和动画效果当前的位置哦喵
-		 * 
-		 * @param {HTMLElement} element 
+		 *
+		 * @param {HTMLElement} element
 		 * @returns {[number, number]} 当前元素相对于视口的实际位置喵
 		 */
 		function getCurrentPosition(element) {
-			const { x, y } = element.getBoundingClientRect();
+			const { x, y } = getScaledBound(element);
 			const animation = game.$elementGotoAnimData.invertingAnimations.get(element);
 
 			if (animation) {
@@ -356,8 +369,8 @@ export class Game extends GameCompatible {
 
 		/**
 		 * 将元素当前位置记录为开始位置
-		 * 
-		 * @param {HTMLElement} element 
+		 *
+		 * @param {HTMLElement} element
 		 */
 		function recordAsFirstPosition(element) {
 			const startPosition = game.$elementGotoAnimData.startPosition;
@@ -372,8 +385,8 @@ export class Game extends GameCompatible {
 
 		/**
 		 * 将元素当前位置记录为结束位置
-		 * 
-		 * @param {HTMLElement} element 
+		 *
+		 * @param {HTMLElement} element
 		 */
 		function recordAsLastPosition(element) {
 			const position = getCurrentPosition(element);
@@ -428,7 +441,7 @@ export class Game extends GameCompatible {
 
 		/**
 		 * 获取元素的动画起始和结束位置
-		 * 
+		 *
 		 * @param {HTMLElement} element
 		 * @returns {[number, number, number, number] | null} [起始位置X, 起始位置Y, 结束位置X, 结束位置Y]
 		 */
@@ -455,8 +468,8 @@ export class Game extends GameCompatible {
 		/**
 		 * 克隆可视动画元素
 		 * 将克隆整个element以及所有不包含id的连续的祖先节点
-		 * 
-		 * @param {HTMLElement} element 
+		 *
+		 * @param {HTMLElement} element
 		 * @returns {[HTMLElement, HTMLElement]} [subject, clonedRoot] 复制的主元素与复制树的根节点喵
 		 */
 		function cloneVisualElement(element) {
@@ -509,7 +522,7 @@ export class Game extends GameCompatible {
 				}
 
 				const [sx, sy, ex, ey] = position;
-				const canOverflow = getComputedStyle(parent).overflow === 'visible';
+				const canOverflow = getComputedStyle(parent).overflow === "visible";
 				let animation;
 
 				if (canOverflow) {
@@ -519,22 +532,25 @@ export class Game extends GameCompatible {
 					const invertingY = sy - ey;
 
 					// 最后是PLAY喵，开始动画并等待结束喵
-					animation = element.animate([
+					animation = element.animate(
+						[
+							{
+								transform: `translate(${invertingX}px, ${invertingY}px)`,
+							},
+							{
+								transform: `translate(0px, 0px)`,
+							},
+						],
 						{
-							transform: `translate(${invertingX}px, ${invertingY}px)`,
-						},
-						{
-							transform: `translate(0px, 0px)`,
-						},
-					], {
-						duration: duration,
-						easing: timefun,
-						composite: "accumulate",
-					});
+							duration: duration,
+							easing: timefun,
+							composite: "accumulate",
+						}
+					);
 				} else {
 					// 否则我们需要复制动画元素喵
 					const [subject, stage] = cloneVisualElement(element);
-					const bounds = subject.getBoundingClientRect();
+					const bounds = getScaledBound(subject);
 					const startX = sx - bounds.x;
 					const startY = sy - bounds.y;
 					const endX = ex - bounds.x;
@@ -543,19 +559,22 @@ export class Game extends GameCompatible {
 					// 隐藏原来的元素喵
 					element.classList.add("facade-replacing");
 
-					animation = subject.animate([
+					animation = subject.animate(
+						[
+							{
+								transform: `translate(${startX}px, ${startY}px)`,
+							},
+							{
+								transform: `translate(${endX}px, ${endY}px)`,
+							},
+						],
 						{
-							transform: `translate(${startX}px, ${startY}px)`,
-						},
-						{
-							transform: `translate(${endX}px, ${endY}px)`,
-						},
-					], {
-						duration: duration,
-						easing: timefun,
-						composite: "accumulate",
-						fill: "forwards",
-					});
+							duration: duration,
+							easing: timefun,
+							composite: "accumulate",
+							fill: "forwards",
+						}
+					);
 					// @ts-expect-error 我们需要给Animation添加一个属性喵
 					animation.actualVisual = subject; // 标记实际节点喵
 
@@ -2089,6 +2108,217 @@ export class Game extends GameCompatible {
 			}
 			game.ws.send(JSON.stringify(get.stringifiedResult(args)));
 		}
+	}
+	/**
+	 * 对于客户端syncSkillData使用防抖函数喵
+	 *
+	 * 用Map存储特定sync函数的防抖版本喵
+	 *
+	 * @type {{ [key: string]: { [key: string]: Function } }}
+	 */
+	#skillSyncDebounceMap = {};
+	/**
+	 * 对于客户端requestSkillData使用防抖函数喵
+	 *
+	 * 用Map存储特定sync函数的防抖版本喵
+	 *
+	 * @type {{ [key: string]: { [key: string]: Function } }}
+	 */
+	#skillRequestDebounceMap = {};
+	/**
+	 * 对于技能请求我们应该记录每个lib.skill.xxx.sync函数上次的调用时间，间隔500ms内的重复调用主机应该拒绝喵
+	 *
+	 * @type { WeakMap<Player, { [skill: string]: { [sync: string]: number } }> }
+	 */
+	#skillSyncTicks = new WeakMap();
+	/**
+	 * ```plain
+	 * 在客机发出同步信号，要求主机通过广播或单播更新数据喵
+	 * 此函数会要求主机调用指定的`get.info(skill).sync[sync]`函数但不会等待结果返回喵
+	 *
+	 * 具体调用请参考@see requestSkillData 函数的文档喵
+	 * ```
+	 *
+	 * @param { string } skill
+	 * @param { string } sync
+	 * @param  { ...any } args
+	 * @returns
+	 */
+	syncSkillData(skill, sync, ...args) {
+		if ("observe" in game && game.observe) {
+			return;
+		}
+
+		// 也许客机检查是不必要的喵
+		// // @ts-expect-error 重载函数可以接受所有类型参数喵
+		// const info = get.info(name);
+
+		// if (!info) {
+		// 	throw new Error("没有在客机上找到对应的牌或技能，syncSkillData应该用在双方拥有的牌或技能上，或者由主机另行注册喵");
+		// }
+
+		game.#skillSyncDebounceMap[skill] ??= {};
+
+		(game.#skillSyncDebounceMap[skill][sync] ??= debounce((...args) => {
+			game.send("dataSync", { type: "skill", name: skill, key: sync, args }, null);
+		}))(...args);
+	}
+	/**
+	 * ```plain
+	 * 在客机发出请求，要求主机响应并返回特定的数据
+	 * 此函数会要求主机调用指定的`get.info(skill).sync[sync]`函数
+	 * 并通过Promise返回主机的给出的数据
+	 *
+	 * 具体调用例子:
+	 * ```
+	 * ```js
+	 * lib.skill["testSkill"] = {
+	 *     async content() {
+	 *         if (player.isOnline()) {
+	 *             // 如果是客机玩家喵
+	 *             player.send(() => {
+	 *                 // 调用主机的lib.skill.testSkill.iWannaTopCards(game.me, 3, 5000);
+	 *                 const cards = game.requestSkillData("testSkill", "iWannaTopCards", 5000, 3);
+	 *                 // 调用主机的lib.skill.testSkill.iWannaTopCards2(game.me, 3, 5, 5000);
+	 *                 const cards2 = game.requestSkillData("testSkill", "iWannaTopCards2", 5000, 3, 5);
+	 *                 console.log(cards);
+	 *                 console.log(cards2);
+	 *             });
+	 *         } else {
+	 *             // 托管、AI或主机玩家的处理喵
+	 *         }
+	 *     },
+	 *     sync: {
+	 *         // 函数分别获得参数: 请求的客机玩家、参数、超时时间，对应player、3、5000
+	 *         async iWannaTopCards(player, num, timeout) { // 可以是async喵，但是请在超时时间前完成喵
+	 *             return Array.prototype.slice.call(ui.cardPile.childNodes, 0, num);
+	 *         },
+	 *         // 函数分别获得参数: 请求的客机玩家、参数、超时时间，对应player、3与5、5000
+	 *         async iWannaTopCards2(player, start, end, timeout) {
+	 *             return Array.prototype.slice.call(ui.cardPile.childNodes, start, end);
+	 *         },
+	 *     },
+	 * }
+	 * ```
+	 *
+	 * @param { string } skill
+	 * @param { string } sync
+	 * @param { number | null } timeout
+	 * @param  { ...any } args
+	 * @returns { Promise<[boolean, any]> } 请求是否成功和返回的数据
+	 */
+	requestSkillData(skill, sync, timeout, ...args) {
+		if ("observe" in game && game.observe) {
+			return Promise.resolve([false, null]);
+		}
+
+		if (!timeout || !Number.isFinite(timeout) || timeout <= 0) {
+			timeout = 5000;
+		}
+
+		// 也许客机检查是不必要的喵
+		// // @ts-expect-error 重载函数可以接受所有类型参数喵
+		// const info = get.info(name);
+
+		// if (!info) {
+		// 	throw new Error("没有在客机上找到对应的牌或技能，requestSkillData应该用在双方拥有的牌或技能上，或者由主机另行注册喵");
+		// }
+
+		game.#skillRequestDebounceMap[skill] ??= {};
+
+		return (game.#skillRequestDebounceMap[skill][sync] ??= debounce(
+			(timeout, ...args) => {
+				const id = (function () {
+					while (true) {
+						const id = Math.random().toString(36).slice(2);
+						if (!(id in game.dataRequestMap)) {
+							return id;
+						}
+					}
+				})();
+				const { promise, resolve } = Promise.withResolvers();
+
+				game.dataRequestMap[id] = (ok, result) => resolve([ok, result]);
+				game.send("dataSync", { type: "skill", name: skill, key: sync, args, timeout }, id);
+
+				const timeoutPromise = new Promise(resolve => {
+					setTimeout(() => {
+						delete game.dataRequestMap[id];
+						resolve([false, game.SKILL_SYNC_RESULTS.REQUEST_TIMEOUT]);
+					}, timeout);
+				});
+
+				return Promise.any([promise, timeoutPromise]);
+			},
+			{
+				delay: 500,
+				failResult: [false, game.SKILL_SYNC_RESULTS.TOO_MANY_CALLS],
+			}
+		))(timeout, ...args);
+	}
+	/**
+	 * 失败结果常量表喵
+	 */
+	SKILL_SYNC_RESULTS = Object.freeze({
+		INVALID_ARGUMENT: "参数不符合要求喵",
+		MISSING_SKILL: "技能没有找到喵",
+		SKILL_NOT_GRANTED: "请求的技能不被许可喵",
+		MISSING_SKILL_SYNC: "请求的sync函数没有找到喵",
+		TOO_MANY_REQUESTS: "请求过于频繁了喵",
+		TOO_MANY_CALLS: "调用请求次数过于频繁喵",
+		REQUEST_TIMEOUT: "请求超时喵",
+	});
+	/**
+	 * 由联机接口调用来处理客机请求逻辑喵
+	 * 请不要手动调用此函数喵！！！
+	 *
+	 * @param {string} id
+	 * @param {Player} player
+	 * @param {*} subject
+	 * @returns { Promise<[boolean, any] | undefined> }
+	 */
+	async respondSkillData(id, player, { name: skill, key: sync, args, timeout }) {
+		// 检查合法性喵
+		if (typeof skill !== "string" || typeof sync !== "string" || !Array.isArray(args) || typeof timeout !== "number") {
+			return [false, game.SKILL_SYNC_RESULTS.INVALID_ARGUMENT];
+		}
+
+		const info = get.info(skill);
+
+		if (!info) {
+			return [false, game.SKILL_SYNC_RESULTS.MISSING_SKILL];
+		}
+
+		// 函数调用权限检查喵
+		if (!lib.skill.global.includes(skill) && !player.hasSkill(skill, true, true, false)) {
+			// 失效技能也有技权喵
+			return [false, game.SKILL_SYNC_RESULTS.SKILL_NOT_GRANTED];
+		}
+
+		const syncList = info.sync;
+		const targetFunction = syncList?.[sync];
+
+		if (typeof targetFunction !== "function") {
+			return [false, game.SKILL_SYNC_RESULTS.MISSING_SKILL_SYNC];
+		}
+
+		// 请求频率的简单校验喵
+		const ticksMap = game.#skillSyncTicks.get(player);
+		const lastTicks = ticksMap?.[skill]?.[sync] ?? NaN;
+
+		if (!isNaN(lastTicks)) {
+			if (lastTicks > Date.now() - 500) {
+				return [false, game.SKILL_SYNC_RESULTS.TOO_MANY_REQUESTS];
+			}
+		}
+
+		const newTicksMap = ticksMap ?? {};
+		const newSkillTicks = newTicksMap[skill] ?? (newTicksMap[skill] = {});
+		newSkillTicks[sync] ??= Date.now();
+		game.#skillSyncTicks.set(player, newTicksMap);
+
+		// 执行并返回喵
+		return [true, await targetFunction.call(syncList, player, ...args, timeout)];
 	}
 	/**
 	 * @param { string } id
@@ -6296,14 +6526,26 @@ export class Game extends GameCompatible {
 				lib.hook.globalskill[name].add(skill);
 				lib.hookmap[evt] = true;
 			};
+			const map = lib.relatedTrigger,
+				names = Object.keys(map);
 			for (let i in info.trigger) {
+				const evts = [];
 				if (typeof info.trigger[i] == "string") {
-					setTrigger(i, info.trigger[i]);
+					evts.add(info.trigger[i]);
 				} else if (Array.isArray(info.trigger[i])) {
-					for (let j = 0; j < info.trigger[i].length; j++) {
-						setTrigger(i, info.trigger[i][j]);
-					}
+					evts.addArray(info.trigger[i]);
 				}
+				evts.forEach(evt => {
+					names
+						.reduce((list, name) => {
+							if (evt.startsWith(name)) {
+								return list.addArray(map[name].map(j => j + evt.slice(name.length)));
+							}
+							return list;
+						}, [])
+						.forEach(evtx => setTrigger(i, evtx));
+					setTrigger(i, evt);
+				});
 			}
 		}
 		return true;
@@ -7715,11 +7957,9 @@ export class Game extends GameCompatible {
 			window.game = game;
 			let exports;
 			let isESM = true;
-			// try {
-			if (name === "guozhan") {
+			try {
 				exports = await import(`../../mode/${name}/index.js`);
-			} else {
-			// } catch (e1) {
+			} catch (e1) {
 				try {
 					exports = await import(`../../mode/${name}.js`);
 				} catch (e2) {
@@ -8614,25 +8854,30 @@ export class Game extends GameCompatible {
 		} else if (lib.translate[`${iInfo}_combat`] && get.is.versus()) {
 			lib.translate[iInfo] = lib.translate[`${iInfo}_combat`];
 		}
+		info.skill_id ??= i;
 		let deleteSkill = function (skill, iInfo) {
-			let skillx = {},
-				info = get.info(skill);
-			if (info) {
-				["audio", "audioname", "audioname2"].forEach(name => {
-					if (info[name]) {
-						skillx[name] = info[name];
+			let { audio, audioname, audioname2, skillID } = lib.skill[skill] || {};
+			lib.skill[skill] = { audio, audioname, audioname2, skillID };
+			lib.translate[iInfo] &&= "此模式下不可用";
+			lib.dynamicTranslate[skill] &&= () => "此模式下不可用";
+		};
+		if (info.inherit) {
+			const skill = lib.skill[info.inherit];
+			if (skill) {
+				Object.keys(skill).forEach(value => {
+					if (info[value] == undefined) {
+						if (value == "audio" && (typeof info[value] == "number" || typeof info[value] == "boolean")) {
+							info[value] = info.inherit;
+						} else {
+							info[value] = skill[value];
+						}
 					}
 				});
 			}
-			lib.skill[skill] = skillx;
-			if (lib.translate[iInfo]) {
-				lib.translate[iInfo] = "此模式下不可用";
-			}
-			if (lib.dynamicTranslate[skill]) {
-				lib.dynamicTranslate[skill] = () => "此模式下不可用";
-			}
-		};
-		if ((info.forbid && info.forbid.includes(mode)) || (info.mode && info.mode.includes(mode) == false) || (info.available && info.available(mode) == false)) {
+			lib.translate[i] ??= lib.translate[info.inherit];
+			lib.translate[iInfo] ??= lib.translate[`${info.inherit}_info`];
+		}
+		if (info.forbid?.includes(mode) || info.mode?.includes(mode) == false || info.available?.(mode) == false) {
 			deleteSkill(i, iInfo);
 			return;
 		}
@@ -8665,43 +8910,12 @@ export class Game extends GameCompatible {
 				});
 			}
 		}
-		if (info.inherit) {
-			const skill = lib.skill[info.inherit];
-			if (skill) {
-				Object.keys(skill).forEach(value => {
-					if (info[value] != undefined) {
-						return;
-					}
-					if (value == "audio" && (typeof info[value] == "number" || typeof info[value] == "boolean")) {
-						info[value] = info.inherit;
-					} else {
-						info[value] = skill[value];
-					}
-				});
-			}
-			if (lib.translate[i] == undefined) {
-				lib.translate[i] = lib.translate[info.inherit];
-			}
-			if (lib.translate[iInfo] == undefined) {
-				lib.translate[iInfo] = lib.translate[`${info.inherit}_info`];
-			}
-		}
 		if (info.limited) {
-			if (info.mark === undefined) {
-				info.mark = true;
-			}
-			if (!info.intro) {
-				info.intro = {};
-			}
-			if (info.intro.content === undefined) {
-				info.intro.content = "limited";
-			}
-			if (info.skillAnimation === undefined) {
-				info.skillAnimation = true;
-			}
-			if (info.init === undefined) {
-				info.init = (player, skill) => (player.storage[skill] = false);
-			}
+			info.mark ??= true;
+			info.intro ??= {};
+			info.intro.content ??= "limited";
+			info.skillAnimation ??= true;
+			info.init ??= (player, skill) => (player.storage[skill] = false);
 		}
 		if (info.subSkill && !sub) {
 			Object.keys(info.subSkill).forEach(value => {
@@ -9548,26 +9762,26 @@ export class Game extends GameCompatible {
 					};
 			  })
 			: game.getDB(storeName).then(object => {
-				const keys = Object.keys(object);
-				lib.status.reload += keys.length;
-				const store = lib.db.transaction([storeName], "readwrite").objectStore(storeName);
-				return Promise.allSettled(
-					keys.map(
-						key =>
-							new Promise((resolve, reject) => {
-								const request = store.delete(key);
-								request.onerror = event => {
-									game.reload2();
-									reject(event);
-								};
-								request.onsuccess = event => {
-									game.reload2();
-									resolve(event);
-								};
-							})
-					)
-				);
-			});
+					const keys = Object.keys(object);
+					lib.status.reload += keys.length;
+					const store = lib.db.transaction([storeName], "readwrite").objectStore(storeName);
+					return Promise.allSettled(
+						keys.map(
+							key =>
+								new Promise((resolve, reject) => {
+									const request = store.delete(key);
+									request.onerror = event => {
+										game.reload2();
+										reject(event);
+									};
+									request.onsuccess = event => {
+										game.reload2();
+										resolve(event);
+									};
+								})
+						)
+					);
+			  });
 	}
 	/**
 	 * @param { string } key
@@ -10328,6 +10542,62 @@ export class Game extends GameCompatible {
 			}
 		}
 		return other;
+	}
+	// /**
+	//  * 用于向lib.poptipMap添加名词解释便于调用
+	//  *
+	//  * @param { string } id 该poptip的在map中的id
+	//  * @param { string } name 该poptip的id的翻译，最终显示在tip上的文字
+	//  * @param { string } info 该poptip的名词解释
+	//  */
+	// addPoptip(id, name, info) {
+	// 	return lib.poptip.add({id, name, info});
+	// }
+	/**
+	 * 删除当前的poptip对话框
+	 */
+	closePoptipDialog() {
+		if (_status.poptip?.length) {
+			_status.poptip[0].delete();
+			_status.poptip[1].remove();
+			delete _status.poptip;
+		}
+	}
+	/**
+	 * find the skillname of the event
+	 * 获取触发事件的技能
+	 * @param { GameEvent | GameEventPromise } event
+	 * @param { Boolean } includeCharlotteSkill 是否包含夏洛特技
+	 * @param { Boolean } includeEquipSkill 是否包含装备技能
+	 * @param { Boolean } includeGlobalSkill 是否包含全局技能
+	 * @returns { string | null }
+	 */
+	findSkill(event, includeCharlotteSkill = false, includeEquipSkill = false, includeGlobalSkill = false) {
+		let skill = "";
+		let count = 0;
+		let evt = event;
+		do {
+			evt = evt.parent;
+			let name = evt?.name;
+			if (!name) {
+				break;
+			}
+			if (name.startsWith("pre_")) {
+				name = name.slice(4);
+			}
+			for (const suffix of ["_backup", "ContentBefore", "ContentAfter", "_cost"]) {
+				if (name.endsWith(suffix)) {
+					name = name.slice(0, name.lastIndexOf(suffix));
+				}
+			}
+			skill = get.sourceSkillFor(name);
+			const info = lib.skill[skill];
+			if (!info || !Object.keys(info).length || (!includeCharlotteSkill && info.charlotte) || (!includeEquipSkill && info.equipSkill) || (!includeGlobalSkill && lib.skill.global.includes(skill))) {
+				continue;
+			}
+			return skill;
+		} while (++count < 10);
+		return null;
 	}
 }
 

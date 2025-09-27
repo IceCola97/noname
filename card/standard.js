@@ -3057,7 +3057,7 @@ game.import("card", function () {
 					}
 					"step 1";
 					if (event.directfalse || result.bool === false) {
-						var cards = target.getEquips(1);
+						const cards = target.getGainableCards(player, "e", card => get.subtypes(card)?.includes("equip1"));
 						if (cards.length) {
 							player.gain(cards, target, "give", "bySelf");
 						}
@@ -3630,7 +3630,7 @@ game.import("card", function () {
 				},
 				mod: {
 					cardUsable(card, player, num) {
-						var cards = player.getEquips("zhuge");
+						var cards = player.getCards("e", card => get.name(card) == "zhuge");
 						if (card.name === "sha") {
 							if (!cards.length || player.hasSkill("zhuge_skill", null, false) || cards.some(card => card !== _status.zhuge_temp && !ui.selected.cards.includes(card))) {
 								if (get.is.versus() || get.is.changban()) {
@@ -3644,7 +3644,7 @@ game.import("card", function () {
 						if (!_status.event.addCount_extra || player.hasSkill("zhuge_skill", null, false)) {
 							return;
 						}
-						var cards = player.getEquips("zhuge");
+						var cards = player.getCards("e", card => get.name(card) == "zhuge");
 						if (card && cards.includes(card)) {
 							try {
 								var cardz = get.card();
@@ -3807,6 +3807,7 @@ game.import("card", function () {
 				intro: { content: "当前防具技能已失效" },
 			},
 			qinglong_skill: {
+				audio: true,
 				equipSkill: true,
 				trigger: { player: ["shaMiss", "eventNeutralized"] },
 				direct: true,
@@ -3826,7 +3827,7 @@ game.import("card", function () {
 									return false;
 								}
 								if (!player.hasSkill("qinglong_skill", null, false)) {
-									var cards = player.getEquips("qinglong");
+									var cards = player.getCards("e", card => get.name(card) == "qinglong");
 									if (!cards.some(card2 => card2 !== card && !ui.selected.cards.includes(card2))) {
 										return false;
 									}
@@ -3840,6 +3841,7 @@ game.import("card", function () {
 				},
 			},
 			zhangba_skill: {
+				audio: true,
 				equipSkill: true,
 				enable: ["chooseToUse", "chooseToRespond"],
 				filterCard: true,
@@ -3850,7 +3852,6 @@ game.import("card", function () {
 				filter(event, player) {
 					return player.countCards("hs") >= 2;
 				},
-				audio: true,
 				prompt: "将两张手牌当杀使用或打出",
 				check(card) {
 					let player = _status.event.player;
@@ -3893,7 +3894,7 @@ game.import("card", function () {
 					}
 					var min = 2;
 					if (!player.hasSkill("guanshi_skill", null, false)) {
-						min += get.sgn(player.getEquips("guanshi").length);
+						min += get.sgn(player.getCards("e", card => get.name(card) == "guanshi").length);
 					}
 					return player.countCards("he") >= min;
 				},
@@ -3905,7 +3906,7 @@ game.import("card", function () {
 							if (_status.event.ignoreCard) {
 								return true;
 							}
-							var cards = player.getEquips("guanshi");
+							var cards = player.getCards("e", card => get.name(card) == "guanshi");
 							if (!cards.includes(card)) {
 								return true;
 							}
@@ -5176,7 +5177,12 @@ game.import("card", function () {
 			bagua_info: "当你需要使用或打出一张【闪】时，你可以进行判定。若结果为红色，则你视为使用或打出一张【闪】。",
 			bagua_skill_info: "当你需要使用或打出一张【闪】时，你可以进行判定。若结果为红色，则你视为使用或打出一张【闪】。",
 			jueying_info: "锁定技，其他角色计算与你的距离+1。",
-			jueying_append: '<span class="text" style="font-family: yuanli">【绝影】于7月5日8时-7月21日24时位于装备区时，可以将【绝影】置入弃牌堆防止一次伤害。</span>',
+			get jueying_append() {
+				if (get.mode() == "doudizhu") {
+					return '<span class="text" style="font-family: yuanli">【绝影】于7月5日8时-7月21日24时位于装备区时，可以将【绝影】置入弃牌堆防止一次伤害。</span>';
+				}
+				return "";
+			},
 			dilu_info: "锁定技，其他角色计算与你的距离+1。",
 			zhuahuang_info: "锁定技，其他角色计算与你的距离+1。",
 			chitu_info: "锁定技，你计算与其他角色的距离-1。",

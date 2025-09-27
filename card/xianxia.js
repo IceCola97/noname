@@ -479,6 +479,34 @@ game.import("card", function () {
 					},
 				},
 			},
+			yushijiesui: {
+				audio: true,
+				fullskin: true,
+				type: "trick",
+				enable: true,
+				filterTarget: true,
+				async content(event, trigger, player) {
+					const target = event.target;
+					await target.damage();
+					await player.loseHp();
+				},
+				ai: {
+					order: 6,
+					value: 12,
+					useful: 10,
+					tag: {
+						damage: 1,
+					},
+					result: {
+						target(player, target) {
+							return get.damageEffect(target, player, target);
+						},
+						player(player, target) {
+							return get.effect(player, { name: "losehp" }, player, player);
+						},
+					},
+				},
+			},
 		},
 		skill: {
 			tiejili_skill: {
@@ -596,10 +624,13 @@ game.import("card", function () {
 								if (get.attitude(player, trigger.player) <= 0 && trigger.player.countCards("h")) {
 									return "获得其一张手牌";
 								}
+								if (!player.countCards("h")) {
+									return "cancel2";
+								}
 								if (player.countCards("h") >= trigger.player.countCards("h") || player.hasSkill("tyxibei")) {
 									return "交给其一张手牌";
 								}
-								return "获得其一张手牌";
+								return "cancel2";
 							})()
 						)
 						.set("ai", () => get.event("res"))
@@ -649,9 +680,13 @@ game.import("card", function () {
 					if (event.type != "discard" || player != _status.currentPhase) {
 						return false;
 					}
-					return player.getHistory("lose", evt => {
-						return evt.type == "discard" && evt?.getl(player)?.cards2?.length > 1;
-					}).indexOf(event) == 0;
+					return (
+						player
+							.getHistory("lose", evt => {
+								return evt.type == "discard" && evt?.getl(player)?.cards2?.length > 1;
+							})
+							.indexOf(event) == 0
+					);
 				},
 				async cost(event, trigger, player) {
 					event.result = await player
@@ -766,7 +801,7 @@ game.import("card", function () {
 			tiejili_skill: "铁蒺藜骨朵",
 			tiejili_skill_info: "准备阶段，你可以将此牌的攻击范围改为x，直到回合结束或此牌离开你的装备区（x为你的体力值）。",
 			lx_huoshaolianying: "火烧连营",
-			lx_huoshaolianying_info: "出牌阶段，对一名角色使用。你展示目标角色的一张牌，然后你可以弃置一张与展示的牌花色相同的手牌。若如此做，你弃置其被展示的牌并对其造成一点火焰伤害，然后若其处于横置状态，你获得弃置堆中的此牌。",
+			lx_huoshaolianying_info: "出牌阶段，对一名角色使用。你展示目标角色的一张牌，然后你可以弃置一张与展示的牌花色相同的手牌。若如此做，你弃置其被展示的牌并对其造成1点火焰伤害，然后若其处于横置状态，你获得弃置堆中的此牌。",
 			suibozhuliu: "随波逐流",
 			suibozhuliu_info: "出牌阶段，对你自己使用，你将此牌置于判定区。判定阶段，你进行判断，若结果为♦️，你将一张装备牌移动至下家的装备区里（若你的装备区里有坐骑牌，则你须选择其中一张坐骑牌），若无法移动则改为下家获得此装备牌。判定结束后，你将判定区里的此牌置于下家的判定区。",
 			ty_feilongduofeng: "飞龙夺凤",
@@ -778,9 +813,9 @@ game.import("card", function () {
 			shangfangbaojian_skill: "尚方宝剑",
 			shangfangbaojian_skill_info: "与你势力相同的角色使用【杀】指定目标后，你可以选择一项：1：交给其一张手牌；2：获得其一张手牌。",
 			qingmingjian: "青冥剑",
-			qingmingjian_info: "当你于回合内首次弃置至少两张牌时，你可以对一名其他角色造成一点伤害 。",
+			qingmingjian_info: "当你于回合内首次弃置至少两张牌时，你可以对一名其他角色造成1点伤害 。",
 			qingmingjian_skill: "青冥剑",
-			qingmingjian_skill_info: "当你于回合内首次弃置至少两张牌时，你可以对一名其他角色造成一点伤害 。",
+			qingmingjian_skill_info: "当你于回合内首次弃置至少两张牌时，你可以对一名其他角色造成1点伤害 。",
 			mengchong: "艨艟",
 			mengchong_info: "锁定技，当你使用牌结算结束后，你选择与其他角色互相计算距离+1或-1直到你的下个回合开始（至多+2/-2）。",
 			mengchong_skill: "艨艟",
@@ -789,6 +824,8 @@ game.import("card", function () {
 			yidugongdu_info: "出牌阶段，对一名已受伤的角色使用。你观看其所有手牌，然后若你与其手牌中均有【毒】，弃置其中一张【毒】并与其各摸两张牌，否则你与其依次受到1点无来源伤害。",
 			dajunyajing: "大军压境",
 			dajunyajing_info: "出牌阶段，对一名角色使用。其以外的所有角色依次选择是否将一张牌当无距离限制的【杀】对其使用。",
+			yushijiesui: "玉石皆碎",
+			yushijiesui_info: "出牌阶段，对一名角色使用。你对目标角色造成1点伤害，然后失去1点体力。",
 		},
 		list: [
 			["diamond", 6, "suibozhuliu"],
@@ -798,6 +835,7 @@ game.import("card", function () {
 			["spade", 5, "shangfangbaojian"],
 			["spade", 5, "qingmingjian"],
 			["club", 5, "mengchong"],
+			["heart", 5, "yushijiesui"],
 		],
 	};
 });

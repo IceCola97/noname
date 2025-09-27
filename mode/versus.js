@@ -756,6 +756,10 @@ export default () => {
 					lib.characterIntro.boss_baijiwenyuan = lib.characterIntro.zhangliao;
 					lib.characterIntro.boss_yihanyunchang = lib.characterIntro.guanyu;
 					lib.characterIntro.boss_fuweizilong = lib.characterIntro.zhaoyun;
+					lib.characterIntro.boss_weiwuyide = lib.characterIntro.zhangfei;
+					lib.characterIntro.boss_elaiziman = lib.characterIntro.dianwei;
+					lib.characterIntro.boss_shenjianhansheng = lib.characterIntro.huangzhong;
+					lib.characterIntro.boss_yiyongwenze = lib.characterIntro.yujin;
 					"step 1";
 					for (var i in lib.skill) {
 						if (lib.skill[i].seatRelated === true) {
@@ -4648,6 +4652,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "刘|备",
 				},
 				boss_gongshenyueying: {
 					sex: "female",
@@ -4658,6 +4663,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "黄|月英",
 				},
 				boss_tianhoukongming: {
 					sex: "male",
@@ -4668,6 +4674,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "诸葛|亮",
 				},
 				boss_yuhuoshiyuan: {
 					sex: "male",
@@ -4678,6 +4685,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "庞|统",
 				},
 				boss_qiaokuijunyi: {
 					sex: "male",
@@ -4688,6 +4696,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "张|郃",
 				},
 				boss_jiarenzidan: {
 					sex: "male",
@@ -4698,6 +4707,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "曹|真",
 				},
 				boss_duanyuzhongda: {
 					sex: "male",
@@ -4708,6 +4718,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "司马|懿",
 				},
 				boss_juechenmiaocai: {
 					sex: "male",
@@ -4718,6 +4729,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "夏侯|渊",
 				},
 
 				boss_jileibaihu: {
@@ -4729,6 +4741,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "null|null",
 				},
 				boss_yunpingqinglong: {
 					sex: "male",
@@ -4739,6 +4752,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "null|null",
 				},
 				boss_lingjiaxuanwu: {
 					sex: "male",
@@ -4749,6 +4763,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "null|null",
 				},
 				boss_chiyuzhuque: {
 					sex: "male",
@@ -4759,6 +4774,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "null|null",
 				},
 				boss_fudibian: {
 					sex: "male",
@@ -4769,6 +4785,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "null|null",
 				},
 				boss_tuntianchiwen: {
 					sex: "male",
@@ -4779,6 +4796,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "null|null",
 				},
 				boss_shihuosuanni: {
 					sex: "male",
@@ -4789,6 +4807,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "null|null",
 				},
 				boss_lieshiyazi: {
 					sex: "male",
@@ -4799,6 +4818,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "null|null",
 				},
 
 				boss_kumuyuanrang: {
@@ -4810,6 +4830,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "夏侯|惇",
 				},
 				boss_baijiwenyuan: {
 					sex: "male",
@@ -4820,6 +4841,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "wei",
+					names: "张|辽",
 				},
 				boss_yihanyunchang: {
 					sex: "male",
@@ -4830,6 +4852,7 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "关|羽",
 				},
 				boss_fuweizilong: {
 					sex: "male",
@@ -4840,6 +4863,51 @@ export default () => {
 					isHiddenBoss: true,
 					isBossAllowed: true,
 					extraModeData: "shu",
+					names: "赵|云",
+				},
+				boss_weiwuyide: {
+					sex: "male",
+					group: "shu",
+					hp: 4,
+					skills: ["boss_mengwu", "boss_hupo", "boss_shuhun"],
+					isJiangeBoss: true,
+					isHiddenBoss: true,
+					isBossAllowed: true,
+					extraModeData: "shu",
+					names: "张|飞",
+				},
+				boss_elaiziman: {
+					sex: "male",
+					group: "wei",
+					hp: 5,
+					skills: ["boss_yingji", "boss_zhene", "boss_weizhu"],
+					isJiangeBoss: true,
+					isHiddenBoss: true,
+					isBossAllowed: true,
+					extraModeData: "wei",
+					names: "典|韦",
+				},
+				boss_shenjianhansheng: {
+					sex: "male",
+					group: "shu",
+					hp: 4,
+					skills: ["boss_qixian", "boss_jinggong", "boss_beishi"],
+					isJiangeBoss: true,
+					isHiddenBoss: true,
+					isBossAllowed: true,
+					extraModeData: "shu",
+					names: "黄|忠",
+				},
+				boss_yiyongwenze: {
+					sex: "male",
+					group: "wei",
+					hp: 4,
+					skills: ["boss_hanjun", "boss_pigua", "boss_zhengji"],
+					isJiangeBoss: true,
+					isHiddenBoss: true,
+					isBossAllowed: true,
+					extraModeData: "wei",
+					names: "于|禁",
 				},
 			}
 		),
@@ -5434,6 +5502,35 @@ export default () => {
 			boss_baijiwenyuan: "百计文远",
 			boss_yihanyunchang: "翊汉云长",
 			boss_fuweizilong: "扶危子龙",
+
+			boss_weiwuyide: "威武翼德",
+			boss_elaiziman: "恶来子满",
+			boss_shenjianhansheng: "神箭汉升",
+			boss_yiyongwenze: "毅勇文则",
+			boss_mengwu: "猛武",
+			boss_mengwu_info: "锁定技，你使用【杀】无距离次数限制，使用【杀】被抵消后摸一张牌。",
+			boss_hupo: "虎魄",
+			boss_hupo_info: "锁定技，你的锦囊牌视为【杀】。",
+			boss_shuhun: "蜀魂",
+			boss_shuhun_info: "锁定技，你造成伤害后，令随机一名友方角色恢复1点体力。",
+			boss_yingji: "影戟",
+			boss_yingji_info: "出牌阶段限一次，你可以展示所有手牌视为使用一张【杀】，且此【杀】的伤害基数改为你以此法展示的类别数。",
+			boss_zhene: "镇恶",
+			boss_zhene_info: "锁定技，你于出牌阶段使用牌指定目标后，若其手牌数不大于你，其不能响应此牌。",
+			boss_weizhu: "卫主",
+			boss_weizhu_info: "友方角色受到伤害时，你可以弃置一张手牌防止之。",
+			boss_qixian: "启弦",
+			boss_qixian_info: "你于出牌阶段内获得一张牌后，令你本回合下一次使用【杀】的伤害+1。",
+			boss_jinggong: "惊弓",
+			boss_jinggong_info: "锁定技，你使用【杀】无距离限制；你的回合结束时，若你本回合未使用【杀】，你失去1点体力。",
+			boss_beishi: "备矢",
+			boss_beishi_info: "锁定技，其他友方角色对敌方角色造成伤害后，你摸一张牌",
+			boss_hanjun: "撼军",
+			boss_hanjun_info: "出牌阶段限一次，你可以随机弃置所有敌方角色各一张牌，然后获得其中的装备牌或非装备牌。",
+			boss_pigua: "披挂",
+			boss_pigua_info: "锁定技，准备阶段，若你的装备区没有牌，你失去1点体力并从牌堆或弃牌堆获得一张装备牌。",
+			boss_zhengji: "整纪",
+			boss_zhengji_info: "锁定技，友方角色的装备被弃置后，你令所有友方角色各摸一张牌。",
 
 			boss_xiaorui: "骁锐",
 			boss_xiaorui2: "骁锐",
@@ -6183,6 +6280,277 @@ export default () => {
 				},
 			},
 			//剑阁技能
+			boss_mengwu: {
+				trigger: {
+					player: "shaMiss",
+				},
+				forced: true,
+				async content(event, trigger, player) {
+					await player.draw();
+				},
+				mod: {
+					cardUsable(card, player) {
+						if (card.name == "sha") {
+							return Infinity;
+						}
+					},
+					targetInRange(card, player) {
+						if (card.name == "sha") {
+							return true;
+						}
+					},
+				},
+			},
+			boss_hupo: {
+				forced: true,
+				mod: {
+					cardname(card, player) {
+						if (["trick", "delay"].includes(lib.card[card.name].type)) {
+							return "sha";
+						}
+					},
+					cardnature(card, player) {
+						if (["trick", "delay"].includes(lib.card[card.name].type)) {
+							return null;
+						}
+					},
+				},
+			},
+			boss_shuhun: {
+				trigger: {
+					source: "damageSource",
+				},
+				forced: true,
+				filter(event, player) {
+					return game.hasPlayer(current => {
+						return current.isFriendOf(player) && current.isDamaged();
+					});
+				},
+				logTarget(event, player) {
+					return game.filterPlayer(current => {
+						return current.isFriendOf(player) && current.isDamaged();
+					}).randomGet();
+				},
+				async content(event, trigger, player) {
+					const target = event.targets[0];
+					await target.recover();
+				},
+			},
+			boss_yingji: {
+				enable: "phaseUse",
+				usable: 1,
+				filterCard: true,
+				selectCard: -1,
+				ignoreMod: true,
+				viewAs: {
+					name: "sha",
+				},
+				async precontent(event, trigger, player) {
+					delete event.result.skill;
+					const cards = event.result.cards;
+					player.logSkill("boss_yingji");
+					await player.showCards(cards);
+					event.result.cards = [];
+					event.result.card = new lib.element.VCard({ name: "sha", isCard: true });
+					player
+						.when("useCard1")
+						.filter(evt => evt.getParent() == event.getParent())
+						.step(async (event, trigger, player) => {
+							trigger.baseDamage = cards.map(card => get.type2(card)).toUniqued().length;
+						});
+				},
+				ai: {
+					order: 9,
+				},
+			},
+			boss_zhene: {
+				trigger: {
+					player: "useCardToPlayered",
+				},
+				filter(event, player) {
+					return event.target.countCards("h") <= player.countCards("h");
+				},
+				forced: true,
+				logTarget: "target",
+				async content(event, trigger, player) {
+					trigger.getParent().directHit.add(trigger.target);
+				},
+			},
+			boss_weizhu: {
+				trigger: {
+					global: "damageBegin4",
+				},
+				filter(event, player) {
+					return player.countCards("h") && event.player.isFriendOf(player);
+				},
+				async cost(event, trigger, player) {
+					event.result = await player
+						.chooseToDiscard(get.prompt2(event.skill, trigger.player), "h")
+						.set("chooseonly", true)
+						.set("eff", get.damageEffect(trigger.player, trigger.source ?? trigger.player, player))
+						.set("ai", card => {
+							const { eff } = get.event();
+							if (eff >= 0) {
+								return 0;
+							}
+							return 7 - get.value(card);
+						})
+						.forResult();
+					event.result.targets = [trigger.player];
+				},
+				async content(event, trigger, player) {
+					const { cards } = event;
+					await player.modedDiscard(cards);
+					trigger.cancel();
+				},
+			},
+			boss_qixian: {
+				trigger: {
+					player: "gainAfter",
+					global: ["loseAfter", "loseAsyncAfter"],
+				},
+				getIndex(event, player) {
+					if (!event.getg) {
+						return false;
+					}
+					return event.getg(player);
+				},
+				filter(event, player) {
+					return player.isPhaseUsing();
+				},
+				forced: true,
+				locked: false,
+				async content(event, trigger, player) {
+					player
+						.when("useCard1")
+						.filter(evt => evt.card?.name == "sha")
+						.step(async (event, trigger, player) => {
+							trigger.baseDamage ??= 1;
+							trigger.baseDamage++;
+						});
+				},
+			},
+			boss_jinggong: {
+				trigger: {
+					player: "phaseEnd",
+				},
+				forced: true,
+				filter(event, player) {
+					return !player.hasHistory("useCard", evt => evt?.card?.name == "sha");
+				},
+				async content(event, trigger, player) {
+					await player.loseHp();
+				},
+				mod: {
+					targetInRange(card, player) {
+						if (card.name == "sha") {
+							return true;
+						}
+					},
+				},
+			},
+			boss_beishi: {
+				trigger: {
+					global: "damageSource",
+				},
+				forced: true,
+				filter(event, player) {
+					if (event.player.isFriendOf(player)) {
+						return false;
+					}
+					return event.source?.isFriendOf(player) && event.source != player;
+				},
+				logTarget: "source",
+				async content(event, trigger, player) {
+					await player.draw();
+				},
+			},
+			boss_hanjun: {
+				enable: "phaseUse",
+				usable: 1,
+				filter(event, player) {
+					return game.hasPlayer(current => {
+						return !current.isFriendOf(player) && current.countDiscardableCards(player, "he");
+					});
+				},
+				filterTarget(card, player, target) {
+					return !target.isFriendOf(player) && target.countDiscardableCards(player, "he");
+				},
+				selectTarget: -1,
+				async content(event, trigger, player) {
+					const cards = event.target.getDiscardableCards(player, "he");
+					if (cards?.length) {
+						const card = cards.randomGet();
+						await event.target.modedDiscard(card, player);
+						event.getParent().hanjunCards ??= [];
+						event.getParent().hanjunCards.add(card);
+					}
+				},
+				async contentAfter(event, trigger, player) {
+					const cards = event.getParent().hanjunCards;
+					if (cards.length) {
+						const equips = cards.filter(card => get.type(card) == "equip"),
+							noequips = cards.filter(card => get.type(card) != "equip");
+						const result = equips.length && noequips.length ? await player
+							.chooseControl("装备牌", "非装备牌")
+							.set("choiceList", [
+								`获得${get.translation(equips)}`,
+								`获得${get.translation(noequips)}`,
+							])
+							.set("prompt", "撼军：请选择获得的类型")
+							.set("ai", () => get.event("resultx"))
+							.set("resultx", equips.length > noequips.length ? 0 : 1)
+							.forResult() : {
+								index: equips.length ? 0 : 1,
+							};
+						if (result.index == 0) {
+							await player.gain(equips, "gain2");
+						} else {
+							await player.gain(noequips, "gain2");
+						}
+					}
+				},
+			},
+			boss_pigua: {
+				trigger: {
+					player: "phaseZhunbeiBegin",
+				},
+				filter(event, player) {
+					return !player.countCards("e");
+				},
+				forced: true,
+				async content(event, trigger, player) {
+					await player.loseHp();
+					const card = get.cardPile(card => get.type(card) == "equip");
+					if (card) {
+						await player.gain(card, "gain2");
+					}
+				},
+			},
+			boss_zhengji: {
+				trigger: {
+					global: ["loseAfter", "loseAsyncAfter"],
+				},
+				getIndex(event, player) {
+					if (!event.getl || event.type != "discard") {
+						return [];
+					}
+					return game.filterPlayer(current => current.isFriendOf(player)).reduce((cards, current) => {
+						const equips = event.getl(current)?.es;
+						if (equips?.length) {
+							cards.addArray(equips);
+						}
+						return cards;
+					}, []);
+				},
+				logTarget(event, player) {
+					return game.filterPlayer(current => current.isFriendOf(player));
+				},
+				forced: true,
+				async content(event, trigger, player) {
+					await game.asyncDraw(event.targets);
+				},
+			},
 			boss_xiaorui: {
 				trigger: { global: "damageSource" },
 				forced: true,
@@ -6332,6 +6700,7 @@ export default () => {
 							return get.effect(target, trigger.card, player, player);
 						},
 						max: max,
+						allowChooseAll:true,
 					});
 					"step 1";
 					if (result.bool) {
@@ -7874,292 +8243,318 @@ export default () => {
 		},
 		element: {
 			content: {
-				replacePlayer: function () {
-					"step 0";
-					var cards = source.getCards("hej");
-					if (cards.length) {
-						source.$throw(cards, 1000);
-						game.cardsDiscard(cards);
-					}
-					"step 1";
-					var list = source.side == game.me.side ? _status.friend : _status.enemy;
-					if (list.length == 0) {
-						// if(game.friend.includes(source)){
-						// 	game.over(false);
-						// }
-						// else{
-						// 	game.over(true);
-						// }
-						game.friend.remove(source);
-						game.enemy.remove(source);
-						if (game.friend.length == 0) {
-							game.over(false);
-						} else if (game.enemy.length == 0) {
-							game.over(true);
+				replacePlayer: [
+					async (event, trigger, player) => {
+						const { source } = event;
+						if (source.removed) {
+							return event.finish();
 						}
-						if (game.friendZhu && game.friendZhu.classList.contains("dead") && game.friend.length) {
-							game.friendZhu = game.friend[0];
-							game.friendZhu.setIdentity(_status.color + "Zhu");
+						const cards = source.getCards("hej");
+						if (cards.length) {
+							source.$throw(cards, 1000);
+							await game.cardsDiscard(cards);
 						}
-						if (game.enemyZhu && game.enemyZhu.classList.contains("dead") && game.enemy.length) {
-							game.enemyZhu = game.enemy[0];
-							game.enemyZhu.setIdentity(!_status.color + "Zhu");
+					},
+					async (event, trigger, player) => {
+						const { source } = event;
+						const list = source.side == game.me.side ? _status.friend : _status.enemy;
+						if (list.length == 0) {
+							// if(game.friend.includes(source)){
+							// 	game.over(false);
+							// }
+							// else{
+							// 	game.over(true);
+							// }
+							game.friend.remove(source);
+							game.enemy.remove(source);
+							if (game.friend.length == 0) {
+								game.over(false);
+							} else if (game.enemy.length == 0) {
+								game.over(true);
+							}
+							if (game.friendZhu && game.friendZhu.classList.contains("dead") && game.friend.length) {
+								game.friendZhu = game.friend[0];
+								game.friendZhu.setIdentity(_status.color + "Zhu");
+							}
+							if (game.enemyZhu && game.enemyZhu.classList.contains("dead") && game.enemy.length) {
+								game.enemyZhu = game.enemy[0];
+								game.enemyZhu.setIdentity(!_status.color + "Zhu");
+							}
+							return event.finish();
 						}
-						event.finish();
-						return;
-					}
-					if (source.side == game.me.side && list.length > 1 && (game.me == game.friendZhu || (lib.storage.zhu && lib.storage.single_control)) && !_status.auto) {
-						event.dialog = ui.create.dialog("选择替补角色", [list, "character"]);
-						event.filterButton = function () {
-							return true;
-						};
-						event.player = game.me;
-						event.forced = true;
-						event.custom.replace.confirm = function () {
-							event.character = ui.selected.buttons[0].link;
-							event.dialog.close();
-							if (ui.confirm) {
-								ui.confirm.close();
-							}
-							delete event.player;
-							game.resume();
-						};
-						game.check();
-						game.pause();
-					} else {
-						event.character = list[Math.floor(Math.random() * list.length)];
-					}
-					"step 2";
-					game.uncheck();
-					_status.friend.remove(event.character);
-					_status.enemy.remove(event.character);
-					source.revive(null, false);
-					game.additionaldead.push({
-						name: source.name,
-						stat: source.stat,
-					});
-					game.addVideo("reinit", source, [event.character, get.translation(source.side + "Color")]);
-					source.uninit();
-					source.init(event.character);
-					game.log(source, "出场");
-					source.node.identity.dataset.color = get.translation(source.side + "Color");
-					source.draw(4);
-					var evt = event.getParent("dying");
-					if (evt && evt.parent) {
-						evt = evt.parent;
-						evt.untrigger(false, source);
-						for (var i = 0; i < 100; i++) {
-							evt = evt.parent;
-							if (evt.player == source) {
-								evt.finish();
-							}
-							if (evt.name == "phase") {
-								break;
-							}
-						}
-					}
-					if (lib.storage.single_control) {
-						game.onSwapControl();
-					}
-					game.triggerEnter(source);
-					"step 3";
-					// if(_status.currentPhase==source){
-					// 	source.skip('phase');
-					// }
-				},
-				replacePlayerTwo: function () {
-					"step 0";
-					var cards = source.getCards("hej");
-					if (cards.length) {
-						source.$throw(cards, 1000);
-						game.cardsDiscard(cards);
-					}
-					game.delay();
-					"step 1";
-					source.revive(null, false);
-					game.additionaldead.push({
-						name: source.name,
-						stat: source.stat,
-					});
-					game.addVideo("reinit", source, [event.character, get.translation(source.side + "Color")]);
-					source.uninit();
-					source.init(event.character);
-					game.log(source, "出场");
-					// source.node.identity.dataset.color=source.side+'zhu';
-					source.draw(4);
-					var evt = event.getParent("dying");
-					if (evt && evt.parent) {
-						evt = evt.parent;
-						evt.untrigger(false, source);
-						for (var i = 0; i < 100; i++) {
-							evt = evt.parent;
-							if (evt.player == source) {
-								evt.finish();
-							}
-							if (evt.name == "phase") {
-								break;
-							}
-						}
-					}
-					game.triggerEnter(source);
-				},
-				replacePlayerOL: function () {
-					"step 0";
-					var cards = source.getCards("hej");
-					if (cards.length) {
-						source.$throw(cards, 1000);
-						game.cardsDiscard(cards);
-					}
-					game.delay();
-					"step 1";
-					if (event.source.side == game.me.side) {
-						if (_status.friend.length == 1) {
-							event.directresult = _status.friend[0];
-						} else if (event.source == game.me) {
-							if (_status.auto) {
-								event.directresult = _status.friend.randomGet();
-							}
-						} else {
-							if (!event.source.isOnline()) {
-								event.directresult = _status.friend.randomGet();
-							}
-						}
-					} else {
-						if (_status.enemy.length == 1) {
-							event.directresult = _status.enemy[0];
-						} else {
-							if (!event.source.isOnline()) {
-								event.directresult = _status.enemy.randomGet();
-							}
-						}
-					}
-					if (!event.directresult) {
-						if (event.source == game.me) {
-							event.dialog = ui.create.dialog("选择替补角色", [_status.friend, "character"]);
+						if (source.side == game.me.side && list.length > 1 && (game.me == game.friendZhu || (lib.storage.zhu && lib.storage.single_control)) && !_status.auto) {
+							event.dialog = ui.create.dialog("选择替补角色", [list, "character"]);
 							event.filterButton = function () {
 								return true;
 							};
 							event.player = game.me;
 							event.forced = true;
 							event.custom.replace.confirm = function () {
-								event.directresult = ui.selected.buttons[0].link;
+								event.character = ui.selected.buttons[0].link;
 								event.dialog.close();
 								if (ui.confirm) {
 									ui.confirm.close();
 								}
 								delete event.player;
 								game.resume();
-							};
-							event.switchToAuto = function () {
-								event.directresult = _status.friend.randomGet();
-								event.dialog.close();
-								if (ui.confirm) {
-									ui.confirm.close();
-								}
-								delete event.player;
 							};
 							game.check();
 							game.pause();
 						} else {
-							event.source.send(function (player) {
-								if (_status.auto) {
-									_status.event._result = _status.friend.randomGet();
-								} else {
-									var next = game.createEvent("replacePlayer");
-									next.source = player;
-									next.setContent(function () {
-										event.dialog = ui.create.dialog("选择替补角色", [_status.friend, "character"]);
-										event.filterButton = function () {
-											return true;
-										};
-										event.player = event.source;
-										event.forced = true;
-										event.custom.replace.confirm = function () {
-											event.result = ui.selected.buttons[0].link;
-											event.dialog.close();
-											if (ui.confirm) {
-												ui.confirm.close();
-											}
-											delete event.player;
-											game.resume();
-											game.uncheck();
-										};
-										event.switchToAuto = function () {
-											event.result = _status.friend.randomGet();
-											event.dialog.close();
-											if (ui.confirm) {
-												ui.confirm.close();
-											}
-											delete event.player;
-											game.uncheck();
-										};
-										game.check();
-										game.pause();
-									});
-								}
-								game.resume();
-							}, event.source);
-							event.source.wait();
-							game.pause();
+							event.character = list[Math.floor(Math.random() * list.length)];
 						}
-					}
-					"step 2";
-					game.uncheck();
-					if (!event.directresult) {
-						if (event.resultOL) {
-							event.directresult = event.resultOL[source.playerid];
-						}
-						if (!event.directresult || event.directresult == "ai") {
-							if (source.side == game.me.side) {
-								event.directresult = _status.friend.randomGet();
-							} else {
-								event.directresult = _status.enemy.randomGet();
-							}
-						}
-					}
-					var name = event.directresult;
-					var color = source.node.identity.dataset.color;
-					game.additionaldead.push({
-						name: source.name,
-						stat: source.stat,
-					});
-
-					game.broadcastAll(
-						function (source, name, color) {
-							_status.friend.remove(name);
-							_status.enemy.remove(name);
-							source.revive(null, false);
-							source.uninit();
-							source.init(name);
-							source.node.identity.dataset.color = color;
-							if (source == game.me) {
-								ui.arena.classList.remove("selecting");
-							}
-						},
-						source,
-						name,
-						color
-					);
-					game.log(source, "出场");
-
-					source.draw(4);
-					var evt = event.getParent("dying");
-					if (evt && evt.parent) {
-						evt = evt.parent;
-						evt.untrigger(false, source);
-						for (var i = 0; i < 100; i++) {
+					},
+					async (event, trigger, player) => {
+						const { source } = event;
+						game.uncheck();
+						_status.friend.remove(event.character);
+						_status.enemy.remove(event.character);
+						source.revive(null, false);
+						game.additionaldead.push({
+							name: source.name,
+							stat: source.stat,
+						});
+						game.addVideo("reinit", source, [event.character, get.translation(source.side + "Color")]);
+						source.uninit();
+						source.init(event.character);
+						game.log(source, "出场");
+						source.node.identity.dataset.color = get.translation(source.side + "Color");
+						await source.draw(4);
+						var evt = event.getParent("dying");
+						if (evt && evt.parent) {
 							evt = evt.parent;
-							if (evt.player == source) {
-								evt.finish();
-							}
-							if (evt.name == "phase") {
-								break;
+							evt.untrigger(false, source);
+							for (var i = 0; i < 100; i++) {
+								evt = evt.parent;
+								if (evt.player == source) {
+									evt.finish();
+								}
+								if (evt.name == "phase") {
+									break;
+								}
 							}
 						}
-					}
-					game.addVideo("reinit", source, [name, color]);
-					game.triggerEnter(source);
-				},
+						if (lib.storage.single_control) {
+							game.onSwapControl();
+						}
+						await game.triggerEnter(source);
+					},
+					async (event, trigger, player) => {
+						const { source } = event;
+						/*if(_status.currentPhase==source){
+							source.skip('phase');
+						}*/
+					},
+				],
+				replacePlayerTwo: [
+					async (event, trigger, player) => {
+						const { source } = event;
+						if (source.removed) {
+							return event.finish();
+						}
+						const cards = source.getCards("hej");
+						if (cards.length) {
+							source.$throw(cards, 1000);
+							await game.cardsDiscard(cards);
+						}
+						await game.delay();
+					},
+					async (event, trigger, player) => {
+						const { source } = event;
+						source.revive(null, false);
+						game.additionaldead.push({
+							name: source.name,
+							stat: source.stat,
+						});
+						game.addVideo("reinit", source, [event.character, get.translation(source.side + "Color")]);
+						source.uninit();
+						source.init(event.character);
+						game.log(source, "出场");
+						// source.node.identity.dataset.color=source.side+'zhu';
+						await source.draw(4);
+						var evt = event.getParent("dying");
+						if (evt && evt.parent) {
+							evt = evt.parent;
+							evt.untrigger(false, source);
+							for (var i = 0; i < 100; i++) {
+								evt = evt.parent;
+								if (evt.player == source) {
+									evt.finish();
+								}
+								if (evt.name == "phase") {
+									break;
+								}
+							}
+						}
+						await game.triggerEnter(source);
+					},
+				],
+				replacePlayerOL: [
+					async (event, trigger, player) => {
+						const { source } = event;
+						if (source.removed) {
+							return event.finish();
+						}
+						const cards = source.getCards("hej");
+						if (cards.length) {
+							source.$throw(cards, 1000);
+							await game.cardsDiscard(cards);
+						}
+						await game.delay();
+					},
+					async (event, trigger, player) => {
+						const { source } = event;
+						if (event.source.side == game.me.side) {
+							if (_status.friend.length == 1) {
+								event.directresult = _status.friend[0];
+							} else if (event.source == game.me) {
+								if (_status.auto) {
+									event.directresult = _status.friend.randomGet();
+								}
+							} else {
+								if (!event.source.isOnline()) {
+									event.directresult = _status.friend.randomGet();
+								}
+							}
+						} else {
+							if (_status.enemy.length == 1) {
+								event.directresult = _status.enemy[0];
+							} else {
+								if (!event.source.isOnline()) {
+									event.directresult = _status.enemy.randomGet();
+								}
+							}
+						}
+						if (!event.directresult) {
+							if (event.source == game.me) {
+								event.dialog = ui.create.dialog("选择替补角色", [_status.friend, "character"]);
+								event.filterButton = function () {
+									return true;
+								};
+								event.player = game.me;
+								event.forced = true;
+								event.custom.replace.confirm = function () {
+									event.directresult = ui.selected.buttons[0].link;
+									event.dialog.close();
+									if (ui.confirm) {
+										ui.confirm.close();
+									}
+									delete event.player;
+									game.resume();
+								};
+								event.switchToAuto = function () {
+									event.directresult = _status.friend.randomGet();
+									event.dialog.close();
+									if (ui.confirm) {
+										ui.confirm.close();
+									}
+									delete event.player;
+								};
+								game.check();
+								game.pause();
+							} else {
+								event.source.send(function (player) {
+									if (_status.auto) {
+										_status.event._result = _status.friend.randomGet();
+									} else {
+										var next = game.createEvent("replacePlayer");
+										next.source = player;
+										next.setContent(function () {
+											event.dialog = ui.create.dialog("选择替补角色", [_status.friend, "character"]);
+											event.filterButton = function () {
+												return true;
+											};
+											event.player = event.source;
+											event.forced = true;
+											event.custom.replace.confirm = function () {
+												event.result = ui.selected.buttons[0].link;
+												event.dialog.close();
+												if (ui.confirm) {
+													ui.confirm.close();
+												}
+												delete event.player;
+												game.resume();
+												game.uncheck();
+											};
+											event.switchToAuto = function () {
+												event.result = _status.friend.randomGet();
+												event.dialog.close();
+												if (ui.confirm) {
+													ui.confirm.close();
+												}
+												delete event.player;
+												game.uncheck();
+											};
+											game.check();
+											game.pause();
+										});
+									}
+									game.resume();
+								}, event.source);
+								event.source.wait();
+								game.pause();
+							}
+						}
+					},
+					async (event, trigger, player) => {
+						const { source } = event;
+						game.uncheck();
+						if (!event.directresult) {
+							if (event.resultOL) {
+								event.directresult = event.resultOL[source.playerid];
+							}
+							if (!event.directresult || event.directresult == "ai") {
+								if (source.side == game.me.side) {
+									event.directresult = _status.friend.randomGet();
+								} else {
+									event.directresult = _status.enemy.randomGet();
+								}
+							}
+						}
+						var name = event.directresult;
+						var color = source.node.identity.dataset.color;
+						game.additionaldead.push({
+							name: source.name,
+							stat: source.stat,
+						});
+	
+						game.broadcastAll(
+							function (source, name, color) {
+								_status.friend.remove(name);
+								_status.enemy.remove(name);
+								source.revive(null, false);
+								source.uninit();
+								source.init(name);
+								source.node.identity.dataset.color = color;
+								if (source == game.me) {
+									ui.arena.classList.remove("selecting");
+								}
+							},
+							source,
+							name,
+							color
+						);
+						game.log(source, "出场");
+	
+						await source.draw(4);
+						var evt = event.getParent("dying");
+						if (evt && evt.parent) {
+							evt = evt.parent;
+							evt.untrigger(false, source);
+							for (var i = 0; i < 100; i++) {
+								evt = evt.parent;
+								if (evt.player == source) {
+									evt.finish();
+								}
+								if (evt.name == "phase") {
+									break;
+								}
+							}
+						}
+						game.addVideo("reinit", source, [name, color]);
+						await game.triggerEnter(source);
+					},
+				],
 			},
 			player: {
 				gainZhibao: function (num, source) {

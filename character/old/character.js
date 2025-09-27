@@ -1,4 +1,32 @@
 const characters = {
+	x_dc_zhangqiying: {
+		sex: "female",
+		group: "qun",
+		hp: 3,
+		skills: ["x_dc_falu", "x_dc_zhenyi", "x_dc_dianhua"],
+		dieAudios: ["zhangqiying"],
+	},
+	x_yao_yuanshu: {
+		sex: "male",
+		group: "qun",
+		hp: 4,
+		skills: ["yao_yaoyi", "yao_chenwei"],
+		dieAudios: ["yao_yuanshu"],
+		img: "image/character/yao_yuanshu.jpg",
+  },
+	fx_baosanniang: {
+		sex: "female",
+		group: "shu",
+		hp: 3,
+		skills: ["mbfangxu", "mbzhuguan", "mblisuo"],
+	},
+	sy_baosanniang: {
+		sex: "female",
+		group: "shu",
+		hp: 3,
+		skills: ["meiyong", "rexushen", "rezhennan"],
+		dieAudios: ["baosanniang"],
+	},
 	ol_baosanniang: {
 		sex: "female",
 		group: "shu",

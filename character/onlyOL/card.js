@@ -1,14 +1,48 @@
 import { lib, game, ui, get, ai, _status } from "../../noname.js";
 
 const cards = {
+	lusu_phaseZhunbei: { 
+		fullskin: true,
+		noname: true, 
+	},
+	lusu_phaseJudge: { 
+		fullskin: true,
+		noname: true, 
+	},
+	lusu_phaseDraw: { 
+		fullskin: true,
+		noname: true, 
+	},
+	lusu_phaseUse: { 
+		fullskin: true,
+		noname: true, 
+	},
+	lusu_phaseDiscard: { 
+		fullskin: true,
+		noname: true, 
+	},
+	lusu_phaseJieshu: { 
+		fullskin: true,
+		noname: true, 
+	},
 	sizhaojian: {
 		derivation: "ol_sb_yuanshao",
 		cardcolor: "diamond",
 		fullskin: true,
 		type: "equip",
 		subtype: "equip1",
-		get destroy() {
+		/*get destroy() {
 			return !lib.card.sizhaojian.inShanShanFestival();
+		},*/
+		onLose() {
+			if (!lib.card.sizhaojian.inShanShanFestival() && (!event.getParent(2) || event.getParent(2).name != "swapEquip") && (event.getParent().type != "equip" || event.getParent().swapEquip)) {
+				cards.forEach(card => {
+					card.fix();
+					card.remove();
+					card.destroyed = true;
+					game.log(card, "被销毁了");
+				});
+			}
 		},
 		inShanShanFestival() {
 			//闪闪节外离开装备区会销毁

@@ -2314,20 +2314,20 @@ export class Create {
 	 */
 	cardChooseAll() {
 		const event = get.event();
-		// 如果不是当前玩家、不允许全选或者使用complexCard与complexSelect，则取消注入喵
-		if (!event.isMine() || event.noChooseAll || event.complexCard || event.complexSelect) {
+		// 如果不是当前玩家、当前配置或者事件不允许全选或者使用complexCard与complexSelect，则取消注入喵
+		if (!event.isMine() || !event.allowChooseAll || event.complexCard || event.complexSelect || !lib.config.choose_all_button) {
 			return null;
 		}
 		// 这里的条件用的是“AI代选”按钮的条件喵
 		const selectCard = event.selectCard;
-		if (typeof selectCard == "function") {
+		/* if (typeof selectCard == "function") {
 			return null;
-		}
+		} */
 		const range = get.select(selectCard);
 		if (range[1] <= 1) {
 			return null; // 只选一张牌就不使用全选哦喵
 		}
-		return event.cardChooseAll = ui.create.control("全选", function () {
+		return (event.cardChooseAll = ui.create.control("全选", function () {
 			// 这个反选要封装喵？
 			// 好像就只有这里用哦
 			const event = get.event();
@@ -2340,7 +2340,7 @@ export class Create {
 			const selectables = get.selectableCards();
 			// @ts-expect-error 啊至少垫片函数是接受数组的喵
 			const cards = selecteds.length ? [...new Set(selectables).difference(selecteds)] : selectables;
-			
+
 			if (cards.length <= range[1]) {
 				// 如果可以就全选喵
 				ui.selected.cards.push(...cards);
@@ -2362,22 +2362,22 @@ export class Create {
 			if (typeof event.custom?.add?.card == "function") {
 				_status.event.custom.add.card();
 			}
-		});
+		}));
 	}
 	/**
 	 * 向当前事件注入按钮的全选/反选按钮喵
 	 */
 	buttonChooseAll() {
 		const event = get.event();
-		// 如果不是当前玩家、不允许全选或者使用complexSelect，则取消注入喵
-		if (!event.isMine() || !(event.dialog instanceof lib.element.Dialog) || event.noChooseAll || event.complexSelect) {
+		// 如果不是当前玩家、当前配置或者事件不允许全选或者使用complexSelect，则取消注入喵
+		if (!event.isMine() || !(event.dialog instanceof lib.element.Dialog) || !event.allowChooseAll || event.complexSelect || !lib.config.choose_all_button) {
 			return null;
 		}
 		// 这里的条件用的是“AI代选”按钮的条件喵
 		const selectButton = event.selectButton;
-		if (typeof selectButton == "function") {
+		/* if (typeof selectButton == "function") {
 			return null;
-		}
+		} */
 		const range = get.select(selectButton);
 		if (range[1] <= 1) {
 			return null; // 只选一个按钮就不使用全选哦喵
@@ -2397,11 +2397,11 @@ export class Create {
 			// 清空选择的按钮喵
 			ui.selected.buttons.length = 0;
 			game.check();
-			
+
 			const selectables = get.selectableButtons();
 			// @ts-expect-error 啊至少垫片函数是接受数组的喵
 			const buttons = selecteds.length ? [...new Set(selectables).difference(selecteds)] : selectables;
-			
+
 			if (buttons.length <= range[1]) {
 				// 如果可以就全选喵
 				ui.selected.buttons.push(...buttons);
@@ -2766,7 +2766,7 @@ export class Create {
 				game.saveConfig("choice_fan", 3, "doudizhu");
 			}
 		}
-		
+
 		// 根据157的要求移除掉本体的五行扩展哦喵
 		if (game.hasExtension("wuxing")) {
 			game.removeExtension("wuxing");
@@ -3503,7 +3503,6 @@ export class Create {
 				}
 			}
 			node.link = item;
-
 			var double = get.is.double(node._link, true);
 			if (double) {
 				node._changeGroup = true;
@@ -3596,6 +3595,7 @@ export class Create {
 					lib.setIntro(node);
 				}
 				if (infoitem[1]) {
+					var double = get.is.double(item, true);
 					if (double) {
 						node.node.group.innerHTML = double.reduce((previousValue, currentValue) => `${previousValue}<div data-nature="${get.groupnature(currentValue)}">${get.translation(currentValue)}</div>`, "");
 						if (double.length > 4) {
@@ -3684,12 +3684,18 @@ export class Create {
 		skill: (item, type, position, noclick, node) => {
 			//搜索拥有这个技能的角色
 			let characterName;
-			if (Array.isArray(item)) {
-				characterName = item[1] || _status.skillOwner[item[0]];
-				item = item[0];
-			} else {
-				characterName = _status.skillOwner[item] || "shibing";
+			if (!Array.isArray(item)) {
+				item = [item, null];
 			}
+			let defaultName = _status.skillOwner[item[0]] || "shibing";
+			if ("clanSkill" in get.info(item[0]) && get.player()) {
+				let name = get.nameList(get.player()).find(name => {
+					return get.character(name, 3).includes(item[0]);
+				});
+				defaultName = name || defaultName;
+			}
+			characterName = item[1] || defaultName;
+			item = item[0];
 			const info = get.character(characterName);
 			//创建这张vcard并重新赋值link
 			node = ui.create.buttonPresets.vcard(item, "vcard", position, noclick);
@@ -3705,7 +3711,7 @@ export class Create {
 				const skill = node.link;
 				uiintro.add(get.translation(skill));
 				if (lib.translate[skill + "_info"]) {
-					uiintro.add(`<div class="text">${get.skillInfoTranslation(skill)}</div>`);
+					uiintro.add(`<div class="text">${get.skillInfoTranslation(skill, null, false)}</div>`);
 					if (lib.translate[skill + "_append"]) {
 						uiintro._place_text = uiintro.add('<div class="text">' + lib.translate[skill + "_append"] + "</div>");
 					}

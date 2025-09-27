@@ -15,6 +15,10 @@ export class PlayerGuozhan extends Player {
 	 */
 	getGuozhanGroup(num = 0) {
 		if (this.trueIdentity) {
+			const group = lib.character[this[num == 1 ? "name2" : "name1"]][1];
+			if (num != 2 && lib.selectGroup.includes(group)) {
+				return group;
+			}
 			if (lib.character[this.name1][1] != "ye" || num == 1) {
 				return this.trueIdentity;
 			}
@@ -24,6 +28,9 @@ export class PlayerGuozhan extends Player {
 			return lib.character[this.name1].group;
 		}
 		if (num == 1) {
+			return lib.character[this.name2].group;
+		}
+		if (num == 2 && lib.selectGroup.includes(lib.character[this.name1][1])) {
 			return lib.character[this.name2].group;
 		}
 		return lib.character[this.name1].group;
@@ -345,7 +352,7 @@ export class PlayerGuozhan extends Player {
 		});
 	}
 	checkViceSkill(skill, disable) {
-		if (game.expandSkills(lib.character[this.name2][3].slice(0)).includes(skill)) {
+		if (game.expandSkills(lib.character[this.name2][3].slice(0)).includes(skill) || this.hasSkillTag("alwaysViceSkill")) {
 			return true;
 		} else {
 			if (disable !== false) {
@@ -355,7 +362,7 @@ export class PlayerGuozhan extends Player {
 		}
 	}
 	checkMainSkill(skill, disable) {
-		if (game.expandSkills(lib.character[this.name1][3].slice(0)).includes(skill)) {
+		if (game.expandSkills(lib.character[this.name1][3].slice(0)).includes(skill) || this.hasSkillTag("alwaysMainSkill")) {
 			return true;
 		} else {
 			if (disable !== false) {
@@ -422,6 +429,10 @@ export class PlayerGuozhan extends Player {
 		}
 		var to = "gz_shibing" + (info[0] == "male" ? 1 : 2) + info[1];
 		game.log(this, "移除了" + (num ? "副将" : "主将"), "#b" + name);
+		if (!lib.character[to]) {
+			lib.character[to] = [info[0], info[1], 0, [], [`character:${to.slice(3, 11)}`, "unseen"]];
+			lib.translate[to] = `${get.translation(info[1])}兵`;
+		}
 		this.reinit(name, to, false);
 		this.showCharacter(num, false);
 		// @ts-expect-error 类型就是这么写的
@@ -574,6 +585,9 @@ export class PlayerGuozhan extends Player {
 		this.identityShown = true;
 		// @ts-expect-error 类型就是这么写的
 		for (var i = 0; i < skills.length; i++) {
+			if (!this.hiddenSkills.includes(skills[i])) {
+				continue;
+			}
 			// @ts-expect-error 类型就是这么写的
 			this.hiddenSkills.remove(skills[i]);
 			// @ts-expect-error 类型就是这么写的

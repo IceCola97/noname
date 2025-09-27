@@ -1536,6 +1536,8 @@ const skills = {
 						case "diamond":
 							list = [{ name: "sha", nature: "fire" }, player, target];
 							break;
+						default:
+							return 0;
 					}
 					list[0].isCard = true;
 					var eff = 0;
@@ -1709,7 +1711,7 @@ const skills = {
 			event.num = player.storage.zaoli;
 			player.removeMark("zaoli", event.num);
 			if (player.countCards("he") > 0) {
-				player.chooseToDiscard(true, "he", [1, Infinity], "躁厉：弃置至少一张牌").set("ai", function (card) {
+				player.chooseToDiscard(true, "he", [1, Infinity], "躁厉：弃置至少一张牌", "allowChooseAll").set("ai", function (card) {
 					if (card.hasGaintag("zaoli")) {
 						return 1;
 					}
@@ -6192,7 +6194,7 @@ const skills = {
 			const num = Math.max(1, player.hp),
 				{ player: target } = trigger;
 			event.result = await player
-				.chooseCard("he", get.prompt(event.skill, target), `交给其至少${get.cnNumber(num)}张牌，防止即将受到的伤害（${trigger.num}点）`, [num, player.countCards("he")])
+				.chooseCard("he", get.prompt(event.skill, target), `交给其至少${get.cnNumber(num)}张牌，防止即将受到的伤害（${trigger.num}点）`, [num, player.countCards("he")], "allowChooseAll")
 				.set(
 					"goon",
 					(() => {

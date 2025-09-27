@@ -13,6 +13,7 @@ import security from "../util/security.js";
 import { CodeSnippet, ErrorManager } from "../util/error.js";
 
 import { GetCompatible } from "./compatible.js";
+import { HTMLPoptipElement } from "../library/poptip.js";
 
 // 用于标识Map、Set等对象在序列化中的类型
 // 使用了md5("__noname_type")的值作为键
@@ -109,7 +110,7 @@ export class Get extends GetCompatible {
 			name2 = _status.event.getParent(3).name;
 			evt2 = _status.event.getParent(3);
 		}
-		if (name1 == "compareMultiple" || name2 == "compareMultiple" || name1.indexOf("Callback") != -1 || name2.indexOf("Callback") != -1) {
+		if (name1 == "compareMultiple" || name2 == "compareMultiple" || name1?.indexOf("Callback") != -1 || name2?.indexOf("Callback") != -1) {
 			name1 = _status.event.getParent(4).name;
 			evt1 = _status.event.getParent(4);
 			name2 = _status.event.getParent(5).name;
@@ -1154,13 +1155,13 @@ export class Get extends GetCompatible {
 		if (typeof skill !== "string") {
 			skill = skill[text] || skill.skill;
 		}
-		let info = get.info(skill);
+		let info = lib.skill[skill];
 		while (true) {
 			if (!info || typeof info[text] !== "string") {
 				break;
 			}
 			skill = info[text];
-			info = get.info(skill);
+			info = lib.skill[skill];
 		}
 		return skill;
 	}
@@ -1475,6 +1476,14 @@ export class Get extends GetCompatible {
 			}
 			const parser = new DOMParser(),
 				doc = parser.parseFromString(htmlContent || "", "text/html");
+
+			// 初始化poptip名称
+			doc.querySelectorAll("noname-poptip").forEach(poptip => {
+				Object.setPrototypeOf(poptip, HTMLPoptipElement.prototype);
+				//@ts-expect-error ignore
+				poptip.createdCallback();
+			});
+
 			const text = doc.body.textContent || doc.body.innerText;
 			this.plainTextMap.set(htmlContent, text);
 			return text;
@@ -1920,8 +1929,11 @@ export class Get extends GetCompatible {
 			if (info.ai.halfneg) {
 				return 0;
 			}
-			if (typeof info.ai.combo == "string" && player && !player.hasSkill(info.ai.combo)) {
-				return 0;
+			if ((typeof info.ai.combo == "string" || Array.isArray(info.ai.combo)) && player) {
+				let skills = typeof info.ai.combo == "string" ? [info.ai.combo] : info.ai.combo;
+				if (skills.every(skill => !player.hasSkill(skill))) {
+					return 0;
+				}
 			}
 			if (info.ai.neg) {
 				return -1;
@@ -2554,10 +2566,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		const info = {};
 
 		for (const [key, value] of map.entries()) {
-			Array.prototype.push.call(info, [
-				get.stringifiedResult(key, level, nomore),
-				get.stringifiedResult(value, level, nomore),
-			]);
+			Array.prototype.push.call(info, [get.stringifiedResult(key, level, nomore), get.stringifiedResult(value, level, nomore)]);
 		}
 
 		info[TYPE_KEY] = "map";
@@ -2572,8 +2581,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		const info = {};
 
 		for (const value of set) {
-			Array.prototype.push.call(info,
-				get.stringifiedResult(value, level, nomore));
+			Array.prototype.push.call(info, get.stringifiedResult(value, level, nomore));
 		}
 
 		info[TYPE_KEY] = "set";
@@ -2593,10 +2601,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 				continue;
 			}
 
-			map.set(
-				get.parsedResult(pair[0]),
-				get.parsedResult(pair[1])
-			);
+			map.set(get.parsedResult(pair[0]), get.parsedResult(pair[1]));
 		}
 
 		return map;
@@ -2659,7 +2664,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 
 						const type = Object.prototype.toString.call(item).slice(8, -1);
 
-						switch(type) {
+						switch (type) {
 							case "Map":
 								return get.mapInfoOL(item, level - 1, nomore);
 							case "Set":
@@ -3689,7 +3694,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		}
 		return get.translation(str);
 	}
-	skillInfoTranslation(name, player) {
+	skillInfoTranslation(name, player, noHTML = true) {
 		let str = (() => {
 			if (player && lib.dynamicTranslate[name]) {
 				return lib.dynamicTranslate[name](player, name);
@@ -3701,6 +3706,9 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 			return str;
 		})();
 		if (typeof str === "string") {
+			if (noHTML === true) {
+				str = get.plainText(str);
+			}
 			return str;
 		} else {
 			console.warn(`孩子，你${name}的翻译传的是什么？！`);
@@ -4590,7 +4598,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 					opacity = "";
 				}
 				var skilltrans = get.translation(skills[i]).slice(0, 2);
-				str += '<div class="skill" style="' + opacity + '">【' + skilltrans + '】</div><div style="' + opacity + '">' + get.skillInfoTranslation(skills[i]) + '</div><div style="display:block;height:10px"></div>';
+				str += '<div class="skill" style="' + opacity + '">【' + skilltrans + '】</div><div style="' + opacity + '">' + get.skillInfoTranslation(skills[i], null, false) + '</div><div style="display:block;height:10px"></div>';
 			}
 		}
 		return str;
@@ -4717,6 +4725,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 	}
 	nodeintro(node, simple, evt) {
 		var uiintro = ui.create.dialog("hidden", "notouchscroll");
+		uiintro.setAttribute("id", "nodeintro");
 		if (node.classList.contains("player") && !node.name) {
 			return uiintro;
 		}
@@ -4833,11 +4842,11 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 						} else {
 							forbidstr += "（双将禁用）<br>";
 						}
-						forbidstr += get.skillInfoTranslation(skills[i], node) + "</div></div>";
+						forbidstr += get.skillInfoTranslation(skills[i], node, false) + "</div></div>";
 						uiintro.add(forbidstr);
 					} else if (!skills2.includes(skills[i])) {
 						if (lib.skill[skills[i]].preHidden && get.mode() == "guozhan") {
-							uiintro.add('<div><div class="skill" style="opacity:0.5">' + translation + '</div><div><span style="opacity:0.5">' + get.skillInfoTranslation(skills[i], node) + '</span><br><div class="underlinenode on gray" style="position:relative;padding-left:0;padding-top:7px">预亮技能</div></div></div>');
+							uiintro.add('<div><div class="skill" style="opacity:0.5">' + translation + '</div><div><span style="opacity:0.5">' + get.skillInfoTranslation(skills[i], node, false) + '</span><br><div class="underlinenode on gray" style="position:relative;padding-left:0;padding-top:7px">预亮技能</div></div></div>');
 							var underlinenode = uiintro.content.lastChild.querySelector(".underlinenode");
 							if (_status.prehidden_skills.includes(skills[i])) {
 								underlinenode.classList.remove("on");
@@ -4845,11 +4854,11 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 							underlinenode.link = skills[i];
 							underlinenode.listen(ui.click.hiddenskill);
 						} else {
-							uiintro.add('<div style="opacity:0.5"><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node) + "</div></div>");
+							uiintro.add('<div style="opacity:0.5"><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node, false) + "</div></div>");
 						}
 					} else if (lib.skill[skills[i]].temp || !node.skills.includes(skills[i]) || lib.skill[skills[i]].thundertext) {
 						if (lib.skill[skills[i]].frequent || lib.skill[skills[i]].subfrequent) {
-							uiintro.add('<div><div class="skill thundertext thunderauto">' + translation + '</div><div class="thundertext thunderauto">' + get.skillInfoTranslation(skills[i], node) + '<br><div class="underlinenode on gray" style="position:relative;padding-left:0;padding-top:7px">自动发动</div></div></div>');
+							uiintro.add('<div><div class="skill thundertext thunderauto">' + translation + '</div><div class="thundertext thunderauto">' + get.skillInfoTranslation(skills[i], node, false) + '<br><div class="underlinenode on gray" style="position:relative;padding-left:0;padding-top:7px">自动发动</div></div></div>');
 							var underlinenode = uiintro.content.lastChild.querySelector(".underlinenode");
 							if (lib.skill[skills[i]].frequent) {
 								if (lib.config.autoskilllist.includes(skills[i])) {
@@ -4869,10 +4878,10 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 							underlinenode.link = skills[i];
 							underlinenode.listen(ui.click.autoskill2);
 						} else {
-							uiintro.add('<div><div class="skill thundertext thunderauto">' + translation + '</div><div class="thundertext thunderauto">' + get.skillInfoTranslation(skills[i], node) + "</div></div>");
+							uiintro.add('<div><div class="skill thundertext thunderauto">' + translation + '</div><div class="thundertext thunderauto">' + get.skillInfoTranslation(skills[i], node, false) + "</div></div>");
 						}
 					} else if (lib.skill[skills[i]].frequent || lib.skill[skills[i]].subfrequent) {
-						uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node) + '<br><div class="underlinenode on gray" style="position:relative;padding-left:0;padding-top:7px">自动发动</div></div></div>');
+						uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node, false) + '<br><div class="underlinenode on gray" style="position:relative;padding-left:0;padding-top:7px">自动发动</div></div></div>');
 						var underlinenode = uiintro.content.lastChild.querySelector(".underlinenode");
 						if (lib.skill[skills[i]].frequent) {
 							if (lib.config.autoskilllist.includes(skills[i])) {
@@ -4892,7 +4901,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 						underlinenode.link = skills[i];
 						underlinenode.listen(ui.click.autoskill2);
 					} else if (lib.skill[skills[i]].clickable && node.isIn() && node.isUnderControl(true)) {
-						var intronode = uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node) + '<br><div class="menubutton skillbutton" style="position:relative;margin-top:5px">点击发动</div></div></div>').querySelector(".skillbutton");
+						var intronode = uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node, false) + '<br><div class="menubutton skillbutton" style="position:relative;margin-top:5px">点击发动</div></div></div>').querySelector(".skillbutton");
 						if (!_status.gameStarted || (lib.skill[skills[i]].clickableFilter && !lib.skill[skills[i]].clickableFilter(node))) {
 							intronode.classList.add("disabled");
 							intronode.style.opacity = 0.5;
@@ -4900,10 +4909,11 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 							intronode.link = node;
 							intronode.func = lib.skill[skills[i]].clickable;
 							intronode.classList.add("pointerdiv");
+							intronode.listen(() => uiintro.close());
 							intronode.listen(ui.click.skillbutton);
 						}
 					} else {
-						uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node) + "</div></div>");
+						uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], node, false) + "</div></div>");
 					}
 					if (lib.translate[skills[i] + "_append"]) {
 						uiintro._place_text = uiintro.add('<div class="text">' + lib.translate[skills[i] + "_append"] + "</div>");
@@ -5283,8 +5293,16 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 				}
 			}
 			if (typeof info.mark == "function") {
-				var stint = info.mark(uiintro, player.storage[node.skill], player);
-				if (stint) {
+				var stint = info.mark(uiintro, player.storage[node.skill], player, evt, node.skill);
+				if (stint instanceof Promise) {
+					uiintro.hide();
+					stint.then(() => {
+						uiintro.show();
+						if (evt) {
+							lib.placePoppedDialog(uiintro, evt);
+						}
+					});
+				} else if (stint) {
 					var placetext = uiintro.add('<div class="text" style="display:inline">' + stint + "</div>");
 					if (!stint.startsWith('<div class="skill"')) {
 						uiintro._place_text = placetext;
@@ -5296,6 +5314,9 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 					// 	uiintro.add('<div class="text">'+stint+'</div>');
 					// }
 				}
+				/*if (evt) {
+					lib.placePoppedDialog(uiintro, evt);
+				}*/
 			} else {
 				var stint = get.storageintro(info.content, player.storage[node.skill], player, uiintro, node.skill);
 				if (stint) {
@@ -5322,7 +5343,8 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 				return;
 			}
 			var name = node.name,
-				Vcard = node[node.cardSymbol] || false;
+				Vcard = node[node.cardSymbol] || false,
+				trueCard = node;
 			if (node.parentNode.cardMod) {
 				var moded = false;
 				for (var i in node.parentNode.cardMod) {
@@ -5337,29 +5359,28 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 					return uiintro;
 				}
 			}
-			if (node.link && node.link.name && lib.card[node.link.name]) {
+			if (node.link?.name && lib.card[node.link.name]) {
 				name = node.link.name;
+				Vcard = node.link[node.link.cardSymbol] || false;
+				trueCard = node.link;
 			}
-			var cardPosition = get.position(node);
-			if (((cardPosition === "e" || cardPosition === "j") && node.viewAs && node.viewAs != name) || (Vcard && (Vcard.cards.length != 1 || Vcard.cards[0].name != name))) {
-				uiintro.add(get.translation(node.viewAs));
-				var cardInfo = lib.card[node.viewAs],
+			var cardPosition = get.position(trueCard);
+			if (((cardPosition === "e" || cardPosition === "j") && trueCard.viewAs && trueCard.viewAs != name) || (Vcard && (Vcard.cards.length != 1 || Vcard.cards[0].name != name))) {
+				uiintro.add(get.translation(trueCard.viewAs));
+				var cardInfo = lib.card[trueCard.viewAs],
 					showCardIntro = true;
-				var cardOwner = get.owner(node);
+				var cardOwner = get.owner(trueCard);
 				if (cardInfo.blankCard) {
 					if (cardOwner && !cardOwner.isUnderControl(true)) {
 						showCardIntro = false;
 					}
 				}
-				if (cardOwner) {
-					var sourceVCard = Vcard;
-					if (showCardIntro && sourceVCard) {
-						uiintro.add('<div class="text center">（' + (sourceVCard?.cards?.length ? get.translation(get.translation(sourceVCard.cards)) : "这是一张虚拟牌") + "）</div>");
-					}
+				if (cardOwner && showCardIntro) {
+					uiintro.isNotCard = true;
 				}
 				// uiintro.add(get.translation(node.viewAs)+'<br><div class="text center" style="padding-top:5px;">（'+get.translation(node)+'）</div>');
-				uiintro.nosub = true;
-				name = node.viewAs;
+				//uiintro.nosub = true;
+				name = trueCard.viewAs;
 			} else {
 				uiintro.add(get.translation(node));
 			}
@@ -5521,6 +5542,14 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 					if (lib.translate[name + "_append"]) {
 						uiintro.add('<div class="text" style="display:inline">' + lib.translate[name + "_append"] + "</div>");
 					}
+					if (uiintro.isNotCard) {
+						if (Vcard?.cards?.length) {
+							uiintro.add('<div class="text center">—— 对应实体牌 ——</div>');
+							uiintro.addSmall(Vcard.cards);
+						} else {
+							uiintro.add('<div class="text center">（这是一张虚拟牌）</div>');
+						}
+					}
 				}
 				uiintro.add(ui.create.div(".placeholder.slim"));
 			}
@@ -5670,7 +5699,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 							}
 						}
 
-						uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i]) + "</div></div>");
+						uiintro.add('<div><div class="skill">' + translation + "</div><div>" + get.skillInfoTranslation(skills[i], null, false) + "</div></div>");
 
 						if (lib.translate[skills[i] + "_append"]) {
 							uiintro._place_text = uiintro.add('<div class="text">' + lib.translate[skills[i] + "_append"] + "</div>");
@@ -5896,6 +5925,128 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 		if (list.length) {
 			dialog.add(list, true, true);
 		}
+	}
+	/**
+	 *
+	 * 弹出特殊名词的解释窗口
+	 * @param {string} info 对应解释在lib.poptip的值
+	 * @param {PointerEvent|TouchEvent} event 点击事件
+	 */
+	poptipIntro(info, event) {
+		const uiintro = ui.create.dialog("hidden", "notouchscroll");
+		uiintro.style.zIndex = "21";
+		uiintro.setAttribute("id", "poptip");
+		uiintro._place_text = uiintro.add(`<div class = "text">${info}</div>`);
+		uiintro.classList.add("popped");
+		uiintro.classList.add("static");
+		ui.window.appendChild(uiintro);
+
+		if (lib.config.touchscreen) {
+			lib.setScroll(uiintro.contentContainer);
+		}
+
+		lib.placePoppedDialog(uiintro, event);
+		const layer = ui.create.div(".poplayer", ui.window);
+		_status.poptip = [uiintro, layer];
+		const clicklayer = function (e) {
+			uiintro.delete();
+			this.remove();
+			delete _status.poptip;
+			if (e?.stopPropagation) {
+				e.stopPropagation();
+			}
+			if (uiintro._onclose) {
+				uiintro._onclose();
+			}
+		};
+		layer.addEventListener(lib.config.touchscreen ? "touchend" : "click", clicklayer);
+
+		const clickintro = function (e) {
+			layer.remove();
+			this.delete();
+			/*if (e?.stopPropagation) {
+				e.stopPropagation();
+			}*/
+			if (uiintro._onclose) {
+				uiintro._onclose();
+			}
+		};
+		if (uiintro.clickintro) {
+			uiintro.listen(function () {
+				_status.clicked = true;
+			});
+			uiintro._clickintro = clicklayer;
+		} else if (!lib.config.touchscreen) {
+			uiintro.addEventListener("mouseleave", clickintro);
+			uiintro.addEventListener("click", clickintro);
+		} else if (uiintro.touchclose) {
+			uiintro.listen(clickintro);
+		}
+		uiintro._close = clicklayer;
+
+		const adjust = function () {
+			const margin = 8; //上下最小间距
+			uiintro.style.maxHeight = "none";
+			uiintro.style.overflowY = "";
+			if (uiintro._poptipOriginalTransform === undefined) {
+				uiintro._poptipOriginalTransform = uiintro.style.transform || "";
+			}
+			const rect = uiintro.getBoundingClientRect();
+			const top = rect.top;
+			const naturalHeight = uiintro.scrollHeight;
+			const winH = window.innerHeight;
+			const availableBelow = winH - top - margin;
+			const allowedFull = winH - margin * 2;
+			if (naturalHeight <= availableBelow) {
+				uiintro.style.transform = uiintro._poptipOriginalTransform || "";
+				uiintro.style.maxHeight = "none";
+				uiintro.style.overflowY = "";
+				uiintro._poptipTranslate = 0;
+				return;
+			}
+			const desiredTop = Math.max(margin, Math.min(top, winH - margin - naturalHeight));
+			const lift = top - desiredTop;
+			const baseTransform = uiintro._poptipOriginalTransform || "";
+			uiintro._poptipTranslate = lift;
+			uiintro.style.transform = baseTransform + ` translateY(${-lift}px)`;
+			if (naturalHeight > allowedFull) {
+				uiintro.style.maxHeight = allowedFull + "px";
+				uiintro.style.overflowY = "auto";
+			} else {
+				uiintro.style.maxHeight = "none";
+				uiintro.style.overflowY = "";
+			}
+		};
+		if (uiintro._poptipAdjust) {
+			window.removeEventListener("resize", uiintro._poptipAdjust);
+			if (uiintro._poptipObserver) {
+				uiintro._poptipObserver.disconnect();
+			}
+			if (uiintro._poptipRemoveObserver) {
+				uiintro._poptipRemoveObserver.disconnect();
+			}
+		}
+		uiintro._poptipAdjust = adjust;
+		window.addEventListener("resize", adjust);
+		const mo = new MutationObserver(adjust);
+		mo.observe(uiintro, { childList: true, subtree: true, characterData: true });
+		uiintro._poptipObserver = mo;
+		const removeObserver = new MutationObserver(mutations => {
+			for (const m of mutations) {
+				for (const node of m.removedNodes) {
+					if (node === uiintro) {
+						window.removeEventListener("resize", adjust);
+						mo.disconnect();
+						removeObserver.disconnect();
+						return;
+					}
+				}
+			}
+		});
+		removeObserver.observe(document.body, { childList: true, subtree: true });
+		uiintro._poptipRemoveObserver = removeObserver;
+		requestAnimationFrame(adjust);
+		return uiintro;
 	}
 	groups() {
 		return ["wei", "shu", "wu", "qun", "jin", "western", "key"];
@@ -6908,6 +7059,44 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 			return parseInt(zhuanhuanLimit);
 		}
 		return 2;
+	}
+	// /**
+	//  *
+	//  * 根据id获取一个特殊名词的翻译
+	//  * @param {string} id 特殊名词在lib.poptipMap的id
+	//  * @returns {string}
+	//  */
+	// poptipName(id) {
+	// 	return lib.poptip.getName(id);
+	// }
+	// /**
+	//  *
+	//  * 根据id获取一个特殊名词的解释
+	//  * @param {string} id 特殊名词在lib.poptipMap的id
+	//  * @returns {string}
+	//  */
+	// poptipInfo(id) {
+	// 	return lib.poptip.getInfo(id);
+	// }
+	/**
+	 * @overload
+	 * @param {string} poptip 特殊名词的id/技能id/卡牌id
+	 * @returns {string}
+	 */
+	/**
+	 * @overload
+	 * @param {object} poptip
+	 * @param {string} poptip.name 特殊名词
+	 * @param {string} poptip.info 对应解释
+	 * @returns {string}
+	 */
+	/**
+	 * 生成一个超链接格式用于查看特殊名词的解释
+	 * @param {string | object} poptip
+	 * @returns {string}
+	 */
+	poptip(poptip) {
+		return lib.poptip.getElement(poptip);
 	}
 	/**
 	 * 将URL转换成相对于无名杀根目录的路径
